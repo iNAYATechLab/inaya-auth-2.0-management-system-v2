@@ -36,12 +36,34 @@ model User {
   auditLogs       AuditLog[]
   refreshTokens   RefreshToken[]
   phoneOtps       PhoneOtp[] // Task 9: OTP records
+  passkeys        Passkey[]  // Task 13: WebAuthn passkeys
 
   @@index([email])
   @@index([username])
   @@index([phoneNumber])
   @@index([role])
   @@map("users")
+}
+
+// ─── Passkey Model (Task 13: WebAuthn) ──────────────────────────────────────
+model Passkey {
+  id              String   @id @default(cuid())
+  userId          String
+  credentialId    String   @unique // Base64 encoded
+  publicKey       String   @db.Text // Base64 encoded
+  counter         BigInt   @default(0)
+  deviceType      String   // 'singleDevice' or 'multiDevice'
+  backedUp        Boolean  @default(false)
+  transports      String[] // ['usb', 'ble', 'nfc', 'internal', 'hybrid']
+  name            String?  // User-friendly name for the passkey
+  lastUsedAt      DateTime?
+  createdAt       DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([credentialId])
+  @@map("passkeys")
 }
 
 // ─── Auth.js v5 Required Models ──────────────────────────────────────────────

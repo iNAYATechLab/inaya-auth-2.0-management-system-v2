@@ -14,22 +14,45 @@ import { revalidatePath } from 'next/cache';
 import { generateEmailVerificationToken } from '@/lib/utils/emailVerification';
 import { logAction } from '@/lib/utils/audit';
 
-// ─── Sign In Action ──────────────────────────────────────────────────────────
+// ─── Sign In Action (Task 11: Email/Username + Remember Me) ─────────────────
 export async function signInAction(
   prevState: { error?: string } | undefined,
   formData: FormData
 ) {
   try {
+    const emailOrUsername = formData.get('emailOrUsername') as string;
+    const password = formData.get('password') as string;
+    const rememberMe = formData.get('rememberMe') === 'true';
+
+    // Validate input
     const validated = LoginSchema.safeParse({
-      email: formData.get('email'),
-      password: formData.get('password'),
+      emailOrUsername,
+      password,
+      rememberMe: rememberMe,
     });
 
     if (!validated.success) {
       return { error: validated.error.errors[0].message };
     }
 
-    const { email, password } = validated.data;
+    // Resolve username to email if needed
+    let email = emailOrUsername;
+    if (!emailOrUsername.includes('@')) {
+      // It's a username, resolve to email
+      const user = await prisma.user.findUnique({
+        where: { username: emailOrUsername },
+        select: { email: true },
+      });
+
+      if (!user) {
+        return { error: 'Invalid username or password' };
+      }
+
+      email = user.email;
+    }
+
+    // Set session duration based on remember me
+    const maxAge = rememberMe ? 30 * 24 * 60 * 60 : 24 * 60 * 60; // 30 days or 1 day
 
     await nextAuthSignIn('credentials', {
       email,
@@ -38,12 +61,12 @@ export async function signInAction(
     });
 
     revalidatePath('/', 'layout');
-    return { success: true };
+    return { success: true, rememberMe };
   } catch (error) {
     if (error instanceof AuthError) {
       switch (error.type) {
         case 'CredentialsSignin':
-          return { error: 'Invalid email or password' };
+          return { error: 'Invalid email/username or password' };
         case 'AccessDenied':
           return { error: 'Account is deactivated' };
         default:

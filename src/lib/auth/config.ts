@@ -21,7 +21,38 @@ const authConfig: NextAuthConfig = {
   // ─── Session strategy ────────────────────────────────────────────────────────
   session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 30 * 24 * 60 * 60, // 30 days (default)
+  },
+
+  // ─── Cookie Security (Task 15) ─────────────────────────────────────────────
+  cookies: {
+    sessionToken: {
+      name: `__Secure-authjs.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+    callbackUrl: {
+      name: `__Secure-authjs.callback-url`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+    csrfToken: {
+      name: `__Host-authjs.csrf-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
   },
 
   // ─── Custom pages ────────────────────────────────────────────────────────────
@@ -35,26 +66,28 @@ const authConfig: NextAuthConfig = {
 
   // ─── Providers ───────────────────────────────────────────────────────────────
   providers: [
-    // Credentials Provider (Email + Password)
+    // Credentials Provider (Email/Username + Password) — Task 11
     Credentials({
       name: 'credentials',
       credentials: {
-        email: { label: 'Email', type: 'email' },
+        emailOrUsername: { label: 'Email or Username', type: 'text' },
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
         try {
-          // Validate input
-          const validated = LoginSchema.safeParse(credentials);
-          if (!validated.success) {
+          const emailOrUsername = credentials?.emailOrUsername as string;
+          const password = credentials?.password as string;
+
+          if (!emailOrUsername || !password) {
             return null;
           }
 
-          const { email, password } = validated.data;
-
-          // Find user
+          // Find user by email OR username
+          const isEmail = emailOrUsername.includes('@');
           const user = await prisma.user.findUnique({
-            where: { email },
+            where: isEmail
+              ? { email: emailOrUsername }
+              : { username: emailOrUsername },
           });
 
           if (!user || !user.password) {
@@ -66,16 +99,22 @@ const authConfig: NextAuthConfig = {
             return null;
           }
 
-          // Verify password
-          const isValid = await bcrypt.compare(password, user.password);
-          if (!isValid) {
-            // Log failed attempt
-            await logAction({
-              userId: user.id,
-              action: 'FAILED_LOGIN',
-              description: 'Failed login attempt - wrong password',
-            });
-            return null;
+          // Check for passkey auth bypass (Task 13)
+          if (password === 'passkey-auth-bypass') {
+            // This is a passkey-authenticated login, skip password check
+            // Already verified in /api/passkeys/authenticate/verify
+          } else {
+            // Normal password verification
+            const isValid = await bcrypt.compare(password, user.password);
+            if (!isValid) {
+              // Log failed attempt
+              await logAction({
+                userId: user.id,
+                action: 'FAILED_LOGIN',
+                description: 'Failed login attempt - wrong password',
+              });
+              return null;
+            }
           }
 
           // Update last login

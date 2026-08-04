@@ -50,19 +50,40 @@ export function validatePasswordStrength(password: string): { valid: boolean; er
 // Username validation
 const usernameRegex = /^[a-zA-Z0-9_-]{3,30}$/;
 
-// ─── Login Schema ────────────────────────────────────────────────────────────
+// ─── Login Schema (Task 11: Email/Username + Remember Me) ────────────────────
 export const LoginSchema = z.object({
-  email: z
+  emailOrUsername: z
     .string()
-    .min(1, 'Email is required')
-    .email('Please enter a valid email address'),
+    .min(1, 'Email or username is required'),
   password: z
     .string()
     .min(1, 'Password is required')
     .min(8, 'Password must be at least 8 characters'),
+  rememberMe: z.boolean().optional(),
 });
 
 export type LoginInput = z.infer<typeof LoginSchema>;
+
+// ─── Phone OTP Login Schema (Task 14) ────────────────────────────────────────
+export const PhoneLoginSchema = z.object({
+  phoneNumber: z
+    .string()
+    .min(1, 'Phone number is required')
+    .regex(/^\+?[1-9]\d{1,14}$/, 'Please enter a valid phone number'),
+});
+
+export type PhoneLoginInput = z.infer<typeof PhoneLoginSchema>;
+
+export const PhoneOtpLoginSchema = z.object({
+  phoneNumber: z.string().min(1, 'Phone number is required'),
+  otp: z
+    .string()
+    .min(6, 'OTP must be 6 digits')
+    .max(6, 'OTP must be 6 digits')
+    .regex(/^\d{6}$/, 'OTP must be exactly 6 digits'),
+});
+
+export type PhoneOtpLoginInput = z.infer<typeof PhoneOtpLoginSchema>;
 
 // ─── Register Schema (Task 6, 8) ─────────────────────────────────────────────
 export const RegisterSchema = z

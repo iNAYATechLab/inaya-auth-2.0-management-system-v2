@@ -1,4 +1,5 @@
-// Login Page (Task 7: Updated with all social providers)
+// Login Page (Task 11-15)
+// Email/Username + Password + Remember Me + Passkeys + Phone OTP + Social
 'use client';
 
 import { useTranslations } from 'next-intl';
@@ -6,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { LoginSchema, LoginInput } from '@/lib/utils/validations';
 import { signInAction } from '@/lib/auth/actions';
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +17,7 @@ interface LoginPageProps {
   params: Promise<{ locale: string }>;
 }
 
-// Social Provider Icon Components
+// Social provider icons
 function GitHubIcon() {
   return (
     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -63,10 +64,19 @@ function MicrosoftIcon() {
   );
 }
 
+// Login method tabs
+type LoginMethod = 'credentials' | 'passkey' | 'phone';
+
 export default function LoginPage({ params }: LoginPageProps) {
   const t = useTranslations('auth.login');
   const common = useTranslations('common');
+  const [loginMethod, setLoginMethod] = useState<LoginMethod>('credentials');
+  const [phoneStep, setPhoneStep] = useState<'phone' | 'otp'>('phone');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [passkeyError, setPasskeyError] = useState('');
+  const [passkeyLoading, setPasskeyLoading] = useState(false);
 
+  // Credentials form (Task 11: Email/Username + Remember Me)
   const [state, formAction, isPending] = useActionState(
     async (prevState: any, formData: FormData) => {
       const result = await signInAction(prevState, formData);
@@ -83,7 +93,77 @@ export default function LoginPage({ params }: LoginPageProps) {
     formState: { errors },
   } = useForm<LoginInput>({
     resolver: zodResolver(LoginSchema),
+    defaultValues: {
+      rememberMe: false,
+    },
   });
+
+  // Passkey login handler (Task 13)
+  const handlePasskeyLogin = async () => {
+    setPasskeyError('');
+    setPasskeyLoading(true);
+
+    try {
+      // 1. Get authentication options
+      const optionsRes = await fetch('/api/passkeys/authenticate/generate', {
+        method: 'POST',
+      });
+
+      if (!optionsRes.ok) {
+        throw new Error('Failed to get authentication options');
+      }
+
+      const { options } = await optionsRes.json();
+
+      // 2. Start WebAuthn authentication
+      const { startAuthentication } = await import('@simplewebauthn/browser');
+      const credential = await startAuthentication(options);
+
+      // 3. Verify authentication
+      const verifyRes = await fetch('/api/passkeys/authenticate/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(credential),
+      });
+
+      if (!verifyRes.ok) {
+        const errorData = await verifyRes.json();
+        throw new Error(errorData.error || 'Authentication failed');
+      }
+
+      const result = await verifyRes.json();
+      if (result.success) {
+        window.location.href = `/${await params.then(p => p.locale)}/dashboard`;
+      }
+    } catch (error: any) {
+      if (error.name === 'NotAllowedError') {
+        setPasskeyError('Authentication was cancelled');
+      } else {
+        setPasskeyError(error.message || 'Passkey authentication failed');
+      }
+    } finally {
+      setPasskeyLoading(false);
+    }
+  };
+
+  // Phone OTP login handlers (Task 14)
+  const handleSendPhoneOtp = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const phone = formData.get('phoneNumber') as string;
+    
+    const res = await fetch('/api/auth/phone-login/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phoneNumber: phone }),
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      setPhoneNumber(phone);
+      setPhoneStep('otp');
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-accent-50 p-4">
@@ -99,65 +179,225 @@ export default function LoginPage({ params }: LoginPageProps) {
           <p className="text-neutral-600 mt-2">{t('subtitle')}</p>
         </div>
 
-        {/* Login Form */}
+        {/* Login Form Card */}
         <div className="bg-white rounded-2xl shadow-inaya p-8 space-y-6">
-          <form action={formAction} className="space-y-4">
-            {/* Email */}
-            <div className="space-y-2">
-              <Label htmlFor="email">{t('email')}</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                {...register('email')}
-                disabled={isPending}
-              />
-              {errors.email && (
-                <p className="text-sm text-error-600">{errors.email.message}</p>
-              )}
-            </div>
-
-            {/* Password */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">{t('password')}</Label>
-                <Link
-                  href={`/${params.then(p => p.locale).then(l => l)}/forgot-password`}
-                  className="text-sm text-primary-700 hover:text-primary-800 font-medium"
-                >
-                  {t('forgotPassword')}
-                </Link>
-              </div>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                {...register('password')}
-                disabled={isPending}
-              />
-              {errors.password && (
-                <p className="text-sm text-error-600">{errors.password.message}</p>
-              )}
-            </div>
-
-            {/* Error Message */}
-            {state?.error && (
-              <div className="p-3 bg-error-50 border border-error-200 rounded-lg">
-                <p className="text-sm text-error-700">{state.error}</p>
-              </div>
-            )}
-
-            {/* Submit Button */}
-            <Button
-              type="submit"
-              className="w-full bg-primary-700 hover:bg-primary-800 text-white font-medium py-3 rounded-lg transition-all shadow-inaya hover:shadow-inaya-lg"
-              disabled={isPending}
+          {/* Login Method Tabs (Task 11, 13, 14) */}
+          <div className="flex gap-1 p-1 bg-neutral-100 rounded-lg">
+            <button
+              onClick={() => setLoginMethod('credentials')}
+              className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all ${
+                loginMethod === 'credentials'
+                  ? 'bg-white text-primary-700 shadow-sm'
+                  : 'text-neutral-600 hover:text-neutral-900'
+              }`}
             >
-              {isPending ? common('loading') : t('signIn')}
-            </Button>
-          </form>
+              🔑 Password
+            </button>
+            <button
+              onClick={() => setLoginMethod('passkey')}
+              className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all ${
+                loginMethod === 'passkey'
+                  ? 'bg-white text-primary-700 shadow-sm'
+                  : 'text-neutral-600 hover:text-neutral-900'
+              }`}
+            >
+              🔐 Passkey
+            </button>
+            <button
+              onClick={() => setLoginMethod('phone')}
+              className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all ${
+                loginMethod === 'phone'
+                  ? 'bg-white text-primary-700 shadow-sm'
+                  : 'text-neutral-600 hover:text-neutral-900'
+              }`}
+            >
+              📱 Phone
+            </button>
+          </div>
 
-          {/* Divider */}
+          {/* ─── Credentials Login (Task 11) ───────────────────────────────── */}
+          {loginMethod === 'credentials' && (
+            <form action={formAction} className="space-y-4">
+              {/* Email or Username (Task 11) */}
+              <div className="space-y-2">
+                <Label htmlFor="emailOrUsername">Email or Username</Label>
+                <Input
+                  id="emailOrUsername"
+                  type="text"
+                  placeholder="you@example.com or @username"
+                  {...register('emailOrUsername')}
+                  disabled={isPending}
+                />
+                {errors.emailOrUsername && (
+                  <p className="text-sm text-error-600">{errors.emailOrUsername.message}</p>
+                )}
+              </div>
+
+              {/* Password */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">{t('password')}</Label>
+                  <Link
+                    href={`/${params.then(p => p.locale).then(l => l)}/forgot-password`}
+                    className="text-sm text-primary-700 hover:text-primary-800 font-medium"
+                  >
+                    {t('forgotPassword')}
+                  </Link>
+                </div>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  {...register('password')}
+                  disabled={isPending}
+                />
+                {errors.password && (
+                  <p className="text-sm text-error-600">{errors.password.message}</p>
+                )}
+              </div>
+
+              {/* Remember Me (Task 11) */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="rememberMe"
+                  {...register('rememberMe')}
+                  className="w-4 h-4 rounded border-neutral-300 text-primary-700 focus:ring-primary-500"
+                />
+                <Label htmlFor="rememberMe" className="text-sm font-normal text-neutral-600 cursor-pointer">
+                  Remember me for 30 days
+                </Label>
+              </div>
+
+              {/* Error Message */}
+              {state?.error && (
+                <div className="p-3 bg-error-50 border border-error-200 rounded-lg">
+                  <p className="text-sm text-error-700">{state.error}</p>
+                </div>
+              )}
+
+              {/* Submit */}
+              <Button
+                type="submit"
+                className="w-full bg-primary-700 hover:bg-primary-800 text-white font-medium py-3 rounded-lg transition-all shadow-inaya hover:shadow-inaya-lg"
+                disabled={isPending}
+              >
+                {isPending ? common('loading') : t('signIn')}
+              </Button>
+            </form>
+          )}
+
+          {/* ─── Passkey Login (Task 13) ───────────────────────────────────── */}
+          {loginMethod === 'passkey' && (
+            <div className="space-y-4">
+              <div className="text-center py-4">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary-50 flex items-center justify-center">
+                  <span className="text-3xl">🔐</span>
+                </div>
+                <h3 className="text-lg font-semibold text-neutral-900">Sign in with Passkey</h3>
+                <p className="text-sm text-neutral-600 mt-1">
+                  Use your fingerprint, face recognition, or device PIN
+                </p>
+              </div>
+
+              {passkeyError && (
+                <div className="p-3 bg-error-50 border border-error-200 rounded-lg">
+                  <p className="text-sm text-error-700">{passkeyError}</p>
+                </div>
+              )}
+
+              <Button
+                onClick={handlePasskeyLogin}
+                disabled={passkeyLoading}
+                className="w-full bg-primary-700 hover:bg-primary-800 text-white font-medium py-3 rounded-lg transition-all"
+              >
+                {passkeyLoading ? 'Authenticating...' : 'Use Passkey'}
+              </Button>
+
+              <p className="text-center text-xs text-neutral-500">
+                Don't have a passkey?{' '}
+                <Link href="/register" className="text-primary-700 hover:underline">
+                  Register first
+                </Link>
+                , then add a passkey from settings.
+              </p>
+            </div>
+          )}
+
+          {/* ─── Phone OTP Login (Task 14) ─────────────────────────────────── */}
+          {loginMethod === 'phone' && (
+            phoneStep === 'phone' ? (
+              <form onSubmit={handleSendPhoneOtp} className="space-y-4">
+                <div className="text-center py-2">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary-50 flex items-center justify-center">
+                    <span className="text-3xl">📱</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-neutral-900">Sign in with Phone</h3>
+                  <p className="text-sm text-neutral-600 mt-1">
+                    Enter your registered phone number
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phoneNumber">Phone Number</Label>
+                  <Input
+                    id="phoneNumber"
+                    name="phoneNumber"
+                    type="tel"
+                    placeholder="+8801712345678"
+                  />
+                  <p className="text-xs text-neutral-500">
+                    Include country code (e.g., +880)
+                  </p>
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full bg-primary-700 hover:bg-primary-800 text-white font-medium py-3 rounded-lg transition-all"
+                >
+                  Send OTP
+                </Button>
+              </form>
+            ) : (
+              <form className="space-y-4">
+                <div className="text-center py-2">
+                  <h3 className="text-lg font-semibold text-neutral-900">Enter OTP</h3>
+                  <p className="text-sm text-neutral-600 mt-1">
+                    Code sent to {phoneNumber}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="otp">6-Digit OTP</Label>
+                  <Input
+                    id="otp"
+                    name="otp"
+                    type="text"
+                    placeholder="123456"
+                    maxLength={6}
+                    className="text-center text-2xl tracking-[1em] font-mono"
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full bg-primary-700 hover:bg-primary-800 text-white font-medium py-3 rounded-lg transition-all"
+                >
+                  Verify & Sign In
+                </Button>
+
+                <button
+                  type="button"
+                  onClick={() => setPhoneStep('phone')}
+                  className="w-full text-center text-sm text-primary-700 hover:underline"
+                >
+                  ← Change phone number
+                </button>
+              </form>
+            )
+          )}
+
+          {/* ─── Social Login (Task 7, 12) ─────────────────────────────────── */}
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-neutral-200"></div>
@@ -167,58 +407,27 @@ export default function LoginPage({ params }: LoginPageProps) {
             </div>
           </div>
 
-          {/* OAuth Buttons — All 5 Providers (Task 7) */}
+          {/* 5 Social Providers (Task 12) */}
           <div className="grid grid-cols-3 gap-3">
-            <Button
-              variant="outline"
-              size="icon"
-              className="w-full border-neutral-200 hover:bg-neutral-50"
-              asChild
-            >
-              <a href="/api/auth/signin/github">
-                <GitHubIcon />
-              </a>
+            <Button variant="outline" size="icon" className="w-full border-neutral-200 hover:bg-neutral-50" asChild>
+              <a href="/api/auth/signin/github"><GitHubIcon /></a>
             </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="w-full border-neutral-200 hover:bg-neutral-50"
-              asChild
-            >
-              <a href="/api/auth/signin/google">
-                <GoogleIcon />
-              </a>
+            <Button variant="outline" size="icon" className="w-full border-neutral-200 hover:bg-neutral-50" asChild>
+              <a href="/api/auth/signin/google"><GoogleIcon /></a>
             </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="w-full border-neutral-200 hover:bg-neutral-50"
-              asChild
-            >
-              <a href="/api/auth/signin/facebook">
-                <FacebookIcon />
-              </a>
+            <Button variant="outline" size="icon" className="w-full border-neutral-200 hover:bg-neutral-50" asChild>
+              <a href="/api/auth/signin/facebook"><FacebookIcon /></a>
             </Button>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Button
-              variant="outline"
-              className="w-full border-neutral-200 hover:bg-neutral-50"
-              asChild
-            >
+            <Button variant="outline" className="w-full border-neutral-200 hover:bg-neutral-50" asChild>
               <a href="/api/auth/signin/apple">
-                <AppleIcon />
-                <span className="ml-2">Apple</span>
+                <AppleIcon /><span className="ml-2">Apple</span>
               </a>
             </Button>
-            <Button
-              variant="outline"
-              className="w-full border-neutral-200 hover:bg-neutral-50"
-              asChild
-            >
+            <Button variant="outline" className="w-full border-neutral-200 hover:bg-neutral-50" asChild>
               <a href="/api/auth/signin/microsoft-entra-id">
-                <MicrosoftIcon />
-                <span className="ml-2">Microsoft</span>
+                <MicrosoftIcon /><span className="ml-2">Microsoft</span>
               </a>
             </Button>
           </div>
@@ -227,7 +436,7 @@ export default function LoginPage({ params }: LoginPageProps) {
           <p className="text-center text-sm text-neutral-600">
             {t('noAccount')}{' '}
             <Link
-              href={`/${await params.then(p => p.locale)}/register`}
+              href={`/${params.then(p => p.locale).then(l => l)}/register`}
               className="text-primary-700 hover:text-primary-800 font-medium"
             >
               {t('signUp')}
