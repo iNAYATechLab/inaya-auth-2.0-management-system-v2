@@ -11,9 +11,41 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─── Tenant Model (Task 42: Multi-Tenant Architecture) ──────────────────────
+model Tenant {
+  id              String    @id @default(cuid())
+  name            String    // Organization name
+  slug            String    @unique // URL-friendly identifier
+  domain          String?   @unique // Custom domain (optional)
+  logoUrl         String?
+  settings        Json      @default("{}") // Tenant-specific settings
+  plan            TenantPlan @default(FREE)
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  // Relations
+  users           User[]
+  oauthClients    OAuthClient[]
+  webhooks        Webhook[]
+  apiKeys         ApiKey[]
+  
+  @@index([slug])
+  @@index([domain])
+  @@map("tenants")
+}
+
+enum TenantPlan {
+  FREE
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
 // ─── User Model ──────────────────────────────────────────────────────────────
 model User {
   id              String    @id @default(cuid())
+  tenantId        String    // Task 42: Multi-tenant isolation
   name            String?
   username        String?   @unique
   email           String    @unique
@@ -24,6 +56,7 @@ model User {
   phoneNumber     String?   @unique // Task 9: Mobile number
   phoneVerified   DateTime? // Task 9: Phone verification timestamp
   role            Role      @default(USER)
+  tenantRole      TenantRole @default(MEMBER) // Task 42: Role within tenant
   isActive        Boolean   @default(true)
   locale          String    @default("en")
   lastLogin       DateTime?
@@ -38,6 +71,7 @@ model User {
   kycVerifiedAt   DateTime?
 
   // Relations
+  tenant            Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   accounts            Account[]
   sessions            Session[]
   auditLogs           AuditLog[]
@@ -55,11 +89,21 @@ model User {
   kycRecords          KYCRecord[]           // Tasks 35-38: KYC records
   loginMethodCooldowns LoginMethodCooldown[] // Tasks 39-41: Login method cooldowns
 
+  @@unique([tenantId, email])
+  @@unique([tenantId, username])
   @@index([email])
   @@index([username])
   @@index([phoneNumber])
   @@index([role])
+  @@index([tenantId])
   @@map("users")
+}
+
+enum TenantRole {
+  OWNER
+  ADMIN
+  DEVELOPER
+  MEMBER
 }
 
 // ─── Two-Factor Authentication Model (Task 20) ──────────────────────────────
@@ -80,9 +124,10 @@ model TwoFactorAuth {
   @@map("two_factor_auths")
 }
 
-// ─── OAuth Client Model (Task 23-24: SSO/OIDC) ──────────────────────────────
+// ─── OAuth Client Model (Task 23-24: SSO/OIDC, Task 43: Developer Portal) ───
 model OAuthClient {
   id                 String    @id @default(cuid())
+  tenantId           String    // Task 42: Multi-tenant isolation
   clientId           String    @unique // Public client ID
   clientSecret       String    // Encrypted client secret
   name               String    // Application name
@@ -98,6 +143,7 @@ model OAuthClient {
   updatedAt          DateTime  @updatedAt
 
   owner              User      @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  tenant             Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   authorizations     OAuthAuthorization[]
   authorizationCodes OAuthAuthorizationCode[]
   accessTokens       OAuthAccessToken[]
@@ -105,7 +151,69 @@ model OAuthClient {
 
   @@index([clientId])
   @@index([ownerUserId])
+  @@index([tenantId])
   @@map("oauth_clients")
+}
+
+// ─── API Key Model (Task 43: Developer Portal) ──────────────────────────────
+model ApiKey {
+  id            String    @id @default(cuid())
+  tenantId      String
+  userId        String    // Developer who created this key
+  name          String    // Key name (e.g., "Production API Key")
+  key           String    @unique // Hashed API key
+  keyPrefix     String    // First 8 chars for identification
+  permissions   Json      // Array of permissions/scopes
+  expiresAt     DateTime? // Optional expiration
+  lastUsedAt    DateTime?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  @@index([key])
+  @@index([tenantId])
+  @@index([userId])
+  @@map("api_keys")
+}
+
+// ─── Webhook Model (Task 44: Webhooks) ──────────────────────────────────────
+model Webhook {
+  id            String    @id @default(cuid())
+  tenantId      String
+  userId        String    // Developer who created this webhook
+  url           String    // Webhook endpoint URL
+  secret        String    // Webhook signing secret
+  events        Json      // Array of event types to subscribe
+  isActive      Boolean   @default(true)
+  lastTriggeredAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  @@index([tenantId])
+  @@index([userId])
+  @@map("webhooks")
+}
+
+// ─── Webhook Delivery Log (Task 44: Webhook tracking) ───────────────────────
+model WebhookDelivery {
+  id            String    @id @default(cuid())
+  webhookId     String
+  event         String    // Event type that triggered this delivery
+  payload       Json      // Payload sent to webhook
+  statusCode    Int?      // HTTP response status code
+  response      String?   // Response body (truncated)
+  success       Boolean   @default(false)
+  attempts      Int       @default(1)
+  deliveredAt   DateTime?
+  createdAt     DateTime  @default(now())
+  
+  @@index([webhookId])
+  @@index([createdAt])
+  @@map("webhook_deliveries")
 }
 
 // ─── OAuth User Authorization (Task 25: SSO) ────────────────────────────────
