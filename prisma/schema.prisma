@@ -35,7 +35,6 @@ model User {
   sessions            Session[]
   auditLogs           AuditLog[]
   refreshTokens       RefreshToken[]
-  phoneOtps           PhoneOtp[]            // Task 9: OTP records
   passkeys            Passkey[]             // Task 13: WebAuthn passkeys
   passwordResetTokens PasswordResetToken[]  // Step 4: Password reset tokens
 
@@ -187,20 +186,38 @@ enum AuditAction {
   BACKUP_EMAIL_UPDATED
 }
 
-// ─── Phone OTP Model (Task 9) ────────────────────────────────────────────────
-model PhoneOtp {
-  id        String   @id @default(cuid())
-  userId    String
-  phoneNumber String
-  otp       String
-  expiresAt DateTime
-  verifiedAt DateTime?
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+// ─── OTP Model (Tasks 16-18: Unified OTP for all delivery methods) ───────────
+model OtpCode {
+  id          String    @id @default(cuid())
+  userId      String?
+  recipient   String    // email, phone, or telegram chatId
+  recipientType String  // 'email', 'phone', 'telegram'
+  code        String
+  purpose     String    // 'login', 'verify-email', 'verify-phone', 'reset-password'
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(5)
+  expiresAt   DateTime
+  verifiedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  
   @@index([userId])
-  @@index([phoneNumber])
-  @@map("phone_otps")
+  @@index([recipient, recipientType])
+  @@index([code, purpose])
+  @@index([expiresAt])
+  @@map("otp_codes")
+}
+
+// ─── OTP Rate Limiting (Task 18) ─────────────────────────────────────────────
+model OtpRateLimit {
+  id            String   @id @default(cuid())
+  recipient     String
+  recipientType String
+  count         Int      @default(0)
+  windowStart   DateTime
+  windowEnd     DateTime
+  
+  @@unique([recipient, recipientType])
+  @@index([windowEnd])
+  @@map("otp_rate_limits")
 }
 
