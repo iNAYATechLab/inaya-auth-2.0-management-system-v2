@@ -40,6 +40,11 @@ model User {
   twoFactorAuth       TwoFactorAuth?        // Task 20: 2FA TOTP
   ownedOAuthClients   OAuthClient[]         // Task 23: SSO - owned applications
   oauthAuthorizations OAuthAuthorization[]  // Task 25: SSO - granted authorizations
+  securityCheckups    SecurityCheckup[]     // Task 31: Security checkup
+  loginAlerts         LoginAlert[]          // Task 32: Login alerts
+  trustedDevices      TrustedDevice[]       // Task 33: Trusted devices
+  proactiveProtections ProactiveProtection[] // Task 33: Proactive protection
+  securitySettings    SecuritySettings?     // Task 34: Central security settings
 
   @@index([email])
   @@index([username])
@@ -343,5 +348,121 @@ model OtpRateLimit {
   @@unique([recipient, recipientType])
   @@index([windowEnd])
   @@map("otp_rate_limits")
+}
+
+// ─── Security Checkup Model (Task 31) ───────────────────────────────────────
+model SecurityCheckup {
+  id              String   @id @default(cuid())
+  userId          String
+  securityScore   Int      // 0-100
+  checklist       Json     // Array of security checks
+  recommendations Json     // Array of recommendations
+  lastCheckedAt   DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([lastCheckedAt])
+  @@map("security_checkups")
+}
+
+// ─── Login Alert Model (Task 32) ────────────────────────────────────────────
+model LoginAlert {
+  id           String   @id @default(cuid())
+  userId       String
+  ipAddress    String
+  userAgent    String
+  deviceInfo   Json     // Parsed device information
+  location     Json     // IP geolocation data
+  riskLevel    String   // 'low', 'medium', 'high', 'critical'
+  riskFactors  Json     // Array of risk factors
+  isRecognized Boolean  @default(false)
+  isAcknowledged Boolean @default(false)
+  notifiedAt   DateTime?
+  createdAt    DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([createdAt])
+  @@index([riskLevel])
+  @@index([isAcknowledged])
+  @@map("login_alerts")
+}
+
+// ─── Trusted Device Model (Task 33) ─────────────────────────────────────────
+model TrustedDevice {
+  id            String    @id @default(cuid())
+  userId        String
+  deviceFingerprint String // Hash of device characteristics
+  deviceName    String?
+  browser       String
+  os            String
+  ipAddress     String
+  lastUsedAt    DateTime  @default(now())
+  trustLevel    String    @default("trusted") // 'trusted', 'restricted'
+  expiresAt     DateTime? // Optional expiration
+  isRevoked     Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([deviceFingerprint])
+  @@index([isRevoked])
+  @@map("trusted_devices")
+}
+
+// ─── Proactive Protection Log (Task 33) ─────────────────────────────────────
+model ProactiveProtection {
+  id          String   @id @default(cuid())
+  userId      String
+  eventType   String   // 'suspicious_login', 'brute_force', 'unusual_activity'
+  severity    String   // 'low', 'medium', 'high', 'critical'
+  action      String   // 'blocked', 'warned', 'locked'
+  details     Json     // Event details
+  ipAddress   String?
+  userAgent   String?
+  resolved    Boolean  @default(false)
+  resolvedAt  DateTime?
+  createdAt   DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([eventType])
+  @@index([severity])
+  @@index([createdAt])
+  @@map("proactive_protections")
+}
+
+// ─── Central Security Settings (Task 34) ────────────────────────────────────
+model SecuritySettings {
+  id                      String   @id @default(cuid())
+  userId                  String   @unique
+  loginAlertsEnabled      Boolean  @default(true)
+  trustedDevicesEnabled   Boolean  @default(true)
+  proactiveProtection     Boolean  @default(true)
+  suspiciousLoginDetection Boolean @default(true)
+  locationBasedSecurity   Boolean  @default(true)
+  deviceRecognition       Boolean  @default(true)
+  automaticLockout        Boolean  @default(true)
+  maxFailedAttempts       Int      @default(5)
+  lockoutDuration         Int      @default(15) // minutes
+  sessionTimeout          Int      @default(30) // minutes
+  require2FAForTrusted    Boolean  @default(false)
+  notifyOnNewDevice       Boolean  @default(true)
+  notifyOnNewLocation     Boolean  @default(true)
+  allowedCountries        Json?    // Array of allowed country codes
+  blockedIPs              Json?    // Array of blocked IP addresses
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("security_settings")
 }
 
