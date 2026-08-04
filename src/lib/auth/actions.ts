@@ -13,6 +13,7 @@ import bcrypt from 'bcryptjs';
 import { revalidatePath } from 'next/cache';
 import { generateEmailVerificationToken } from '@/lib/utils/emailVerification';
 import { logAction } from '@/lib/utils/audit';
+import { hashPassword } from '@/lib/password/hash.util';
 
 // ─── Sign In Action (Task 11: Email/Username + Remember Me) ─────────────────
 export async function signInAction(
@@ -132,7 +133,7 @@ export async function registerAction(
     }
 
     // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12);
+    const hashedPassword = await hashPassword(password);
 
     // Create user (email not verified yet — Task 6)
     const user = await prisma.user.create({

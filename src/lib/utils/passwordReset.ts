@@ -3,6 +3,8 @@
 
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
+import { hashPassword } from '@/lib/password/hash.util';
+import { logAction } from '@/lib/utils/audit';
 
 /**
  * Generate password reset token
@@ -108,8 +110,7 @@ export async function resetPasswordWithToken(
     }
 
     // Hash new password
-    const bcrypt = require('bcryptjs');
-    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    const hashedPassword = await hashPassword(newPassword);
 
     // Update password
     await prisma.user.update({

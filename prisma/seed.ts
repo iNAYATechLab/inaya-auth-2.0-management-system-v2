@@ -1,6 +1,7 @@
 // iNAYA Auth 2.0 — Database Seed Script
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { hashPassword } from '../src/lib/password/hash.util';
 
 const prisma = new PrismaClient();
 
@@ -8,7 +9,7 @@ async function main() {
   console.log('🌱 Seeding database...\n');
 
   // Create admin user
-  const hashedPassword = await bcrypt.hash('Admin@123456', 12);
+  const hashedPassword = await hashPassword('Admin@123456');
 
   const admin = await prisma.user.upsert({
     where: { email: 'admin@inaya-auth.com' },
@@ -26,7 +27,7 @@ async function main() {
   console.log('✅ Admin user created:', admin.email);
 
   // Create moderator user
-  const modPassword = await bcrypt.hash('Mod@123456', 12);
+  const modPassword = await hashPassword('Mod@123456');
 
   const moderator = await prisma.user.upsert({
     where: { email: 'moderator@inaya-auth.com' },
@@ -44,7 +45,7 @@ async function main() {
   console.log('✅ Moderator user created:', moderator.email);
 
   // Create test user
-  const userPassword = await bcrypt.hash('User@123456', 12);
+  const userPassword = await hashPassword('User@123456');
 
   const user = await prisma.user.upsert({
     where: { email: 'user@inaya-auth.com' },
