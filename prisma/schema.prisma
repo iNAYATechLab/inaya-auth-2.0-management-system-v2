@@ -53,6 +53,7 @@ model User {
   proactiveProtections ProactiveProtection[] // Task 33: Proactive protection
   securitySettings    SecuritySettings?     // Task 34: Central security settings
   kycRecords          KYCRecord[]           // Tasks 35-38: KYC records
+  loginMethodCooldowns LoginMethodCooldown[] // Tasks 39-41: Login method cooldowns
 
   @@index([email])
   @@index([username])
@@ -549,4 +550,37 @@ model SecuritySettings {
   
   @@map("security_settings")
 }
+
+// ─── Login Method Cooldown (Tasks 39-41) ────────────────────────────────────
+model LoginMethodCooldown {
+  id              String   @id @default(cuid())
+  userId          String
+  methodType      String   // 'password', '2fa', 'passkey', 'oauth', 'phone'
+  methodIdentifier String? // Specific identifier (e.g., oauth provider, phone number)
+  cooldownUntil   DateTime // When cooldown expires
+  reason          String?  // Why cooldown was applied
+  createdAt       DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, methodType, methodIdentifier])
+  @@index([userId])
+  @@index([cooldownUntil])
+  @@map("login_method_cooldowns")
+}
+
+// ─── Global Cooldown Settings (Task 41: Super Admin Configurable) ───────────
+model GlobalCooldownSettings {
+  id                    String   @id @default(cuid())
+  passwordCooldownHours Int      @default(24) // Hours to wait after password change
+  twoFactorCooldownHours Int     @default(24) // Hours to wait after 2FA change
+  passkeyCooldownHours  Int      @default(24) // Hours to wait after passkey change
+  oauthCooldownHours    Int      @default(24) // Hours to wait after OAuth link/unlink
+  phoneCooldownHours    Int      @default(24) // Hours to wait after phone change
+  maxSimultaneousChanges Int     @default(1)   // Max login methods that can change at once
+  updatedAt             DateTime @updatedAt
+  
+  @@map("global_cooldown_settings")
+}
+
 

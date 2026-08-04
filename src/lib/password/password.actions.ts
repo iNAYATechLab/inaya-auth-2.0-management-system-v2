@@ -1,6 +1,7 @@
 /**
  * Password Server Actions
  * Task 21: Password reset (email) + Password change
+ * Tasks 39-41: Security cooldown on password change
  */
 
 'use server';
@@ -12,9 +13,11 @@ import bcrypt from 'bcryptjs';
 import { logAction } from '@/lib/utils/audit';
 import { validatePasswordStrength, ChangePasswordSchema } from '@/lib/utils/validations';
 import { hashPassword } from '@/lib/password/hash.util';
+import { withCooldownCheck } from '@/lib/cooldown/withCooldown';
 
 /**
  * Change password (authenticated users)
+ * Tasks 39-41: Now includes cooldown check
  */
 export async function changePasswordAction(
   prevState: { error?: string; success?: boolean } | undefined,
@@ -47,52 +50,67 @@ export async function changePasswordAction(
       return { error: strengthCheck.errors[0] };
     }
 
-    // Get current user with password
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { password: true },
-    });
+    // Tasks 39-41: Apply cooldown check before changing password
+    const cooldownResult = await withCooldownCheck(
+      session.user.id,
+      'password',
+      async () => {
+        // Get current user with password
+        const user = await prisma.user.findUnique({
+          where: { id: session.user.id },
+          select: { password: true },
+        });
 
-    if (!user?.password) {
-      return { error: 'User not found or has no password (OAuth user)' };
+        if (!user?.password) {
+          throw new Error('User not found or has no password (OAuth user)');
+        }
+
+        // Verify current password
+        const isValid = await bcrypt.compare(currentPassword, user.password);
+        if (!isValid) {
+          throw new Error('Current password is incorrect');
+        }
+
+        // Check if new password is same as current
+        const isSamePassword = await bcrypt.compare(newPassword, user.password);
+        if (isSamePassword) {
+          throw new Error('New password must be different from current password');
+        }
+
+        // Hash and update password
+        const hashedPassword = await hashPassword(newPassword);
+        await prisma.user.update({
+          where: { id: session.user.id },
+          data: { password: hashedPassword },
+        });
+
+        // Invalidate all sessions except current
+        await prisma.session.deleteMany({
+          where: { userId: session.user.id },
+        });
+
+        // Log action
+        await logAction({
+          userId: session.user.id,
+          action: 'PASSWORD_CHANGE',
+          description: 'Password changed',
+        });
+
+        revalidatePath('/', 'layout');
+
+        return { message: 'Password changed successfully! Please sign in again.' };
+      },
+      undefined, // methodIdentifier
+      'Password changed by user'
+    );
+
+    if (!cooldownResult.success) {
+      return { error: cooldownResult.error };
     }
-
-    // Verify current password
-    const isValid = await bcrypt.compare(currentPassword, user.password);
-    if (!isValid) {
-      return { error: 'Current password is incorrect' };
-    }
-
-    // Check if new password is same as current
-    const isSamePassword = await bcrypt.compare(newPassword, user.password);
-    if (isSamePassword) {
-      return { error: 'New password must be different from current password' };
-    }
-
-    // Hash and update password
-    const hashedPassword = await hashPassword(newPassword);
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: { password: hashedPassword },
-    });
-
-    // Invalidate all sessions except current
-    await prisma.session.deleteMany({
-      where: { userId: session.user.id },
-    });
-
-    // Log action
-    await logAction({
-      userId: session.user.id,
-      action: 'PASSWORD_CHANGE',
-      description: 'Password changed',
-    });
-
-    revalidatePath('/', 'layout');
 
     return {
       success: true,
-      message: 'Password changed successfully! Please sign in again.',
+      ...cooldownResult.data,
     };
   } catch (error) {
     console.error('Change password error:', error);

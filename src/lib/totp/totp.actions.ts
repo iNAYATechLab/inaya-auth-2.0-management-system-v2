@@ -1,6 +1,7 @@
 /**
  * Two-Factor Authentication Server Actions
  * Task 20: 2FA (TOTP authenticator) setup, verify, disable, recovery codes
+ * Tasks 39-41: Security cooldown on 2FA changes
  */
 
 'use server';
@@ -19,6 +20,7 @@ import {
   decryptData,
 } from '@/lib/totp/totp.util';
 import { logAction } from '@/lib/utils/audit';
+import { withCooldownCheck } from '@/lib/cooldown/withCooldown';
 
 /**
  * Generate 2FA setup data (secret + QR code)
@@ -82,6 +84,7 @@ export async function generate2FASetupAction() {
 
 /**
  * Verify and enable 2FA
+ * Tasks 39-41: Now includes cooldown check
  */
 export async function verifyAndEnable2FAAction(token: string) {
   try {
@@ -90,50 +93,65 @@ export async function verifyAndEnable2FAAction(token: string) {
       return { error: 'Unauthorized' };
     }
 
-    // Get 2FA setup
-    const twoFactorAuth = await prisma.twoFactorAuth.findUnique({
-      where: { userId: session.user.id },
-    });
+    // Tasks 39-41: Apply cooldown check before enabling 2FA
+    const cooldownResult = await withCooldownCheck(
+      session.user.id,
+      '2fa',
+      async () => {
+        // Get 2FA setup
+        const twoFactorAuth = await prisma.twoFactorAuth.findUnique({
+          where: { userId: session.user.id },
+        });
 
-    if (!twoFactorAuth) {
-      return { error: '2FA setup not found. Please generate setup first.' };
-    }
+        if (!twoFactorAuth) {
+          throw new Error('2FA setup not found. Please generate setup first.');
+        }
 
-    if (twoFactorAuth.isEnabled) {
-      return { error: '2FA is already enabled.' };
-    }
+        if (twoFactorAuth.isEnabled) {
+          throw new Error('2FA is already enabled.');
+        }
 
-    // Decrypt secret
-    const secret = decryptData(twoFactorAuth.secret);
+        // Decrypt secret
+        const secret = decryptData(twoFactorAuth.secret);
 
-    // Verify token
-    const isValid = verifyTOTPToken(token, secret);
-    if (!isValid) {
-      return { error: 'Invalid TOTP token. Please try again.' };
-    }
+        // Verify token
+        const isValid = verifyTOTPToken(token, secret);
+        if (!isValid) {
+          throw new Error('Invalid TOTP token. Please try again.');
+        }
 
-    // Enable 2FA
-    await prisma.twoFactorAuth.update({
-      where: { userId: session.user.id },
-      data: {
-        isVerified: true,
-        isEnabled: true,
-        lastVerifiedAt: new Date(),
+        // Enable 2FA
+        await prisma.twoFactorAuth.update({
+          where: { userId: session.user.id },
+          data: {
+            isVerified: true,
+            isEnabled: true,
+            lastVerifiedAt: new Date(),
+          },
+        });
+
+        // Log action
+        await logAction({
+          userId: session.user.id,
+          action: 'PROFILE_UPDATE',
+          description: 'Two-factor authentication enabled',
+        });
+
+        revalidatePath('/', 'layout');
+
+        return { message: '2FA enabled successfully!' };
       },
-    });
+      undefined, // methodIdentifier
+      '2FA enabled by user'
+    );
 
-    // Log action
-    await logAction({
-      userId: session.user.id,
-      action: 'PROFILE_UPDATE',
-      description: 'Two-factor authentication enabled',
-    });
-
-    revalidatePath('/', 'layout');
+    if (!cooldownResult.success) {
+      return { error: cooldownResult.error };
+    }
 
     return {
       success: true,
-      message: '2FA enabled successfully!',
+      ...cooldownResult.data,
     };
   } catch (error) {
     console.error('Verify and enable 2FA error:', error);
@@ -143,6 +161,7 @@ export async function verifyAndEnable2FAAction(token: string) {
 
 /**
  * Disable 2FA
+ * Tasks 39-41: Now includes cooldown check
  */
 export async function disable2FAAction(password: string) {
   try {
@@ -151,7 +170,7 @@ export async function disable2FAAction(password: string) {
       return { error: 'Unauthorized' };
     }
 
-    // Verify password
+    // Verify password first (before cooldown check)
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: { password: true },
@@ -167,23 +186,38 @@ export async function disable2FAAction(password: string) {
       return { error: 'Invalid password' };
     }
 
-    // Delete 2FA
-    await prisma.twoFactorAuth.delete({
-      where: { userId: session.user.id },
-    });
+    // Tasks 39-41: Apply cooldown check before disabling 2FA
+    const cooldownResult = await withCooldownCheck(
+      session.user.id,
+      '2fa',
+      async () => {
+        // Delete 2FA
+        await prisma.twoFactorAuth.delete({
+          where: { userId: session.user.id },
+        });
 
-    // Log action
-    await logAction({
-      userId: session.user.id,
-      action: 'PROFILE_UPDATE',
-      description: 'Two-factor authentication disabled',
-    });
+        // Log action
+        await logAction({
+          userId: session.user.id,
+          action: 'PROFILE_UPDATE',
+          description: 'Two-factor authentication disabled',
+        });
 
-    revalidatePath('/', 'layout');
+        revalidatePath('/', 'layout');
+
+        return { message: '2FA disabled successfully!' };
+      },
+      undefined, // methodIdentifier
+      '2FA disabled by user'
+    );
+
+    if (!cooldownResult.success) {
+      return { error: cooldownResult.error };
+    }
 
     return {
       success: true,
-      message: '2FA disabled successfully!',
+      ...cooldownResult.data,
     };
   } catch (error) {
     console.error('Disable 2FA error:', error);
