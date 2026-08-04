@@ -31,18 +31,34 @@ model User {
   updatedAt       DateTime  @updatedAt
 
   // Relations
-  accounts        Account[]
-  sessions        Session[]
-  auditLogs       AuditLog[]
-  refreshTokens   RefreshToken[]
-  phoneOtps       PhoneOtp[] // Task 9: OTP records
-  passkeys        Passkey[]  // Task 13: WebAuthn passkeys
+  accounts            Account[]
+  sessions            Session[]
+  auditLogs           AuditLog[]
+  refreshTokens       RefreshToken[]
+  phoneOtps           PhoneOtp[]            // Task 9: OTP records
+  passkeys            Passkey[]             // Task 13: WebAuthn passkeys
+  passwordResetTokens PasswordResetToken[]  // Step 4: Password reset tokens
 
   @@index([email])
   @@index([username])
   @@index([phoneNumber])
   @@index([role])
   @@map("users")
+}
+
+// ─── Password Reset Token Model (Step 4) ────────────────────────────────────
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@map("password_reset_tokens")
 }
 
 // ─── Passkey Model (Task 13: WebAuthn) ──────────────────────────────────────
