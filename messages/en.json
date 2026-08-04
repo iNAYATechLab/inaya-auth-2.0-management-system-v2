@@ -1,0 +1,182 @@
+{
+  "common": {
+    "appName": "iNAYA Auth 2.0",
+    "appDescription": "Authentication & Authorization Management System",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "update": "Update",
+    "search": "Search",
+    "filter": "Filter",
+    "actions": "Actions",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "submit": "Submit",
+    "close": "Close",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
+    "or": "or",
+    "and": "and",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome Back",
+      "subtitle": "Sign in to your account",
+      "email": "Email Address",
+      "password": "Password",
+      "forgotPassword": "Forgot password?",
+      "rememberMe": "Remember me",
+      "signIn": "Sign In",
+      "noAccount": "Don't have an account?",
+      "signUp": "Sign Up",
+      "orContinueWith": "Or continue with",
+      "success": "Successfully signed in!",
+      "error": {
+        "invalidCredentials": "Invalid email or password",
+        "accountDeactivated": "Your account has been deactivated",
+        "generic": "Something went wrong. Please try again."
+      }
+    },
+    "register": {
+      "title": "Create Account",
+      "subtitle": "Join iNAYA Auth 2.0",
+      "name": "Full Name",
+      "email": "Email Address",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "signUp": "Create Account",
+      "hasAccount": "Already have an account?",
+      "signIn": "Sign In",
+      "terms": "By creating an account, you agree to our Terms of Service and Privacy Policy",
+      "success": "Account created successfully!",
+      "error": {
+        "emailExists": "An account with this email already exists",
+        "generic": "Something went wrong. Please try again."
+      }
+    },
+    "forgotPassword": {
+      "title": "Forgot Password",
+      "subtitle": "Enter your email to reset your password",
+      "email": "Email Address",
+      "sendResetLink": "Send Reset Link",
+      "backToLogin": "Back to login",
+      "success": "If an account exists with this email, you will receive a reset link shortly.",
+      "error": {
+        "generic": "Something went wrong. Please try again."
+      }
+    },
+    "resetPassword": {
+      "title": "Reset Password",
+      "subtitle": "Enter your new password",
+      "newPassword": "New Password",
+      "confirmPassword": "Confirm Password",
+      "reset": "Reset Password",
+      "success": "Password reset successfully! You can now sign in with your new password.",
+      "error": {
+        "invalidToken": "Invalid or expired reset token",
+        "generic": "Something went wrong. Please try again."
+      }
+    },
+    "logout": {
+      "success": "Successfully signed out",
+      "error": "Failed to sign out"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome, {name}!",
+    "overview": "Overview",
+    "recentActivity": "Recent Activity",
+    "stats": {
+      "totalUsers": "Total Users",
+      "activeUsers": "Active Users",
+      "newUsers": "New Users",
+      "auditLogs": "Audit Logs"
+    }
+  },
+  "users": {
+    "title": "User Management",
+    "subtitle": "Manage all users in the system",
+    "columns": {
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "status": "Status",
+      "lastLogin": "Last Login",
+      "joined": "Joined"
+    },
+    "roles": {
+      "USER": "User",
+      "MODERATOR": "Moderator",
+      "ADMIN": "Admin",
+      "SUPERADMIN": "Super Admin"
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "subtitle": "Manage your account settings",
+    "personalInfo": "Personal Information",
+    "security": "Security",
+    "preferences": "Preferences",
+    "changePassword": "Change Password",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "confirmNewPassword": "Confirm New Password",
+    "updateProfile": "Update Profile",
+    "success": {
+      "profileUpdated": "Profile updated successfully",
+      "passwordChanged": "Password changed successfully"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "theme": "Theme",
+    "themes": {
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    }
+  },
+  "audit": {
+    "title": "Audit Logs",
+    "subtitle": "Track all system activities",
+    "actions": {
+      "LOGIN": "Login",
+      "LOGOUT": "Logout",
+      "REGISTER": "Register",
+      "PASSWORD_CHANGE": "Password Change",
+      "PASSWORD_RESET": "Password Reset",
+      "PROFILE_UPDATE": "Profile Update",
+      "ROLE_CHANGE": "Role Change",
+      "ACCOUNT_DEACTIVATED": "Account Deactivated",
+      "ACCOUNT_DELETED": "Account Deleted",
+      "FAILED_LOGIN": "Failed Login",
+      "TOKEN_REFRESH": "Token Refresh"
+    }
+  },
+  "validation": {
+    "required": "This field is required",
+    "email": "Please enter a valid email address",
+    "minLength": "Must be at least {min} characters",
+    "maxLength": "Cannot exceed {max} characters",
+    "passwordMatch": "Passwords do not match",
+    "passwordStrength": "Password must contain uppercase, lowercase, and a number"
+  },
+  "errors": {
+    "notFound": "Page not found",
+    "unauthorized": "You are not authorized to view this page",
+    "forbidden": "Access denied",
+    "serverError": "Something went wrong",
+    "backHome": "Go back home"
+  }
+}

@@ -1,0 +1,182 @@
+{
+  "common": {
+    "appName": "iNAYA Auth 2.0",
+    "appDescription": "نظام المصادقة والتفويض",
+    "loading": "جاري التحميل...",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "create": "إنشاء",
+    "update": "تحديث",
+    "search": "بحث",
+    "filter": "تصفية",
+    "actions": "إجراءات",
+    "back": "رجوع",
+    "next": "التالي",
+    "previous": "السابق",
+    "submit": "إرسال",
+    "close": "إغلاق",
+    "confirm": "تأكيد",
+    "yes": "نعم",
+    "no": "لا",
+    "or": "أو",
+    "and": "و",
+    "enabled": "مفعل",
+    "disabled": "معطل",
+    "active": "نشط",
+    "inactive": "غير نشط"
+  },
+  "auth": {
+    "login": {
+      "title": "مرحبًا بعودتك",
+      "subtitle": "سجل الدخول إلى حسابك",
+      "email": "البريد الإلكتروني",
+      "password": "كلمة المرور",
+      "forgotPassword": "نسيت كلمة المرور؟",
+      "rememberMe": "تذكرني",
+      "signIn": "تسجيل الدخول",
+      "noAccount": "ليس لديك حساب؟",
+      "signUp": "إنشاء حساب",
+      "orContinueWith": "أو تابع باستخدام",
+      "success": "تم تسجيل الدخول بنجاح!",
+      "error": {
+        "invalidCredentials": "بريد إلكتروني أو كلمة مرور غير صحيحة",
+        "accountDeactivated": "تم تعطيل حسابك",
+        "generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
+      }
+    },
+    "register": {
+      "title": "إنشاء حساب",
+      "subtitle": "انضم إلى iNAYA Auth 2.0",
+      "name": "الاسم الكامل",
+      "email": "البريد الإلكتروني",
+      "password": "كلمة المرور",
+      "confirmPassword": "تأكيد كلمة المرور",
+      "signUp": "إنشاء حساب",
+      "hasAccount": "لديك حساب بالفعل؟",
+      "signIn": "تسجيل الدخول",
+      "terms": "إنشاء حساب يعني موافقتك على شروط الخدمة وسياسة الخصوصية",
+      "success": "تم إنشاء الحساب بنجاح!",
+      "error": {
+        "emailExists": "يوجد حساب بالفعل بهذا البريد الإلكتروني",
+        "generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
+      }
+    },
+    "forgotPassword": {
+      "title": "نسيت كلمة المرور",
+      "subtitle": "أدخل بريدك الإلكتروني لإعادة تعيين كلمة المرور",
+      "email": "البريد الإلكتروني",
+      "sendResetLink": "إرسال رابط إعادة التعيين",
+      "backToLogin": "العودة لتسجيل الدخول",
+      "success": "إذا كان هناك حساب بهذا البريد الإلكتروني، ستتلقى رابط إعادة التعيين قريبًا.",
+      "error": {
+        "generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
+      }
+    },
+    "resetPassword": {
+      "title": "إعادة تعيين كلمة المرور",
+      "subtitle": "أدخل كلمة المرور الجديدة",
+      "newPassword": "كلمة المرور الجديدة",
+      "confirmPassword": "تأكيد كلمة المرور",
+      "reset": "إعادة تعيين كلمة المرور",
+      "success": "تم إعادة تعيين كلمة المرور بنجاح! يمكنك الآن تسجيل الدخول بكلمة المرور الجديدة.",
+      "error": {
+        "invalidToken": "رمز إعادة التعيين غير صالح أو منتهي الصلاحية",
+        "generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
+      }
+    },
+    "logout": {
+      "success": "تم تسجيل الخروج بنجاح",
+      "error": "فشل تسجيل الخروج"
+    }
+  },
+  "dashboard": {
+    "title": "لوحة التحكم",
+    "welcome": "مرحبًا، {name}!",
+    "overview": "نظرة عامة",
+    "recentActivity": "النشاط الأخير",
+    "stats": {
+      "totalUsers": "إجمالي المستخدمين",
+      "activeUsers": "المستخدمون النشطون",
+      "newUsers": "المستخدمون الجدد",
+      "auditLogs": "سجلات التدقيق"
+    }
+  },
+  "users": {
+    "title": "إدارة المستخدمين",
+    "subtitle": "إدارة جميع المستخدمين في النظام",
+    "columns": {
+      "name": "الاسم",
+      "email": "البريد الإلكتروني",
+      "role": "الدور",
+      "status": "الحالة",
+      "lastLogin": "آخر تسجيل دخول",
+      "joined": "انضم"
+    },
+    "roles": {
+      "USER": "مستخدم",
+      "MODERATOR": "مشرف",
+      "ADMIN": "مسؤول",
+      "SUPERADMIN": "مسؤول رئيسي"
+    }
+  },
+  "profile": {
+    "title": "الملف الشخصي",
+    "subtitle": "إدارة إعدادات حسابك",
+    "personalInfo": "المعلومات الشخصية",
+    "security": "الأمان",
+    "preferences": "التفضيلات",
+    "changePassword": "تغيير كلمة المرور",
+    "currentPassword": "كلمة المرور الحالية",
+    "newPassword": "كلمة المرور الجديدة",
+    "confirmNewPassword": "تأكيد كلمة المرور الجديدة",
+    "updateProfile": "تحديث الملف الشخصي",
+    "success": {
+      "profileUpdated": "تم تحديث الملف الشخصي بنجاح",
+      "passwordChanged": "تم تغيير كلمة المرور بنجاح"
+    }
+  },
+  "settings": {
+    "title": "الإعدادات",
+    "language": "اللغة",
+    "theme": "المظهر",
+    "themes": {
+      "light": "فاتح",
+      "dark": "داكن",
+      "system": "النظام"
+    }
+  },
+  "audit": {
+    "title": "سجلات التدقيق",
+    "subtitle": "تتبع جميع أنشطة النظام",
+    "actions": {
+      "LOGIN": "تسجيل الدخول",
+      "LOGOUT": "تسجيل الخروج",
+      "REGISTER": "التسجيل",
+      "PASSWORD_CHANGE": "تغيير كلمة المرور",
+      "PASSWORD_RESET": "إعادة تعيين كلمة المرور",
+      "PROFILE_UPDATE": "تحديث الملف الشخصي",
+      "ROLE_CHANGE": "تغيير الدور",
+      "ACCOUNT_DEACTIVATED": "تعطيل الحساب",
+      "ACCOUNT_DELETED": "حذف الحساب",
+      "FAILED_LOGIN": "فشل تسجيل الدخول",
+      "TOKEN_REFRESH": "تحديث الرمز"
+    }
+  },
+  "validation": {
+    "required": "هذا الحقل مطلوب",
+    "email": "يرجى إدخال بريد إلكتروني صالح",
+    "minLength": "يجب أن يكون {min} أحرف على الأقل",
+    "maxLength": "لا يمكن أن يتجاوز {max} أحرف",
+    "passwordMatch": "كلمات المرور غير متطابقة",
+    "passwordStrength": "يجب أن تحتوي كلمة المرور على أحرف كبيرة وصغيرة ورقم"
+  },
+  "errors": {
+    "notFound": "الصفحة غير موجودة",
+    "unauthorized": "ليس لديك صلاحية لعرض هذه الصفحة",
+    "forbidden": "الوصول مرفوض",
+    "serverError": "حدث خطأ ما",
+    "backHome": "العودة للرئيسية"
+  }
+}
