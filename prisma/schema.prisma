@@ -29,6 +29,7 @@ model Tenant {
   oauthClients    OAuthClient[]
   webhooks        Webhook[]
   apiKeys         ApiKey[]
+  subscription    Subscription? // Task 45-46: Billing
   
   @@index([slug])
   @@index([domain])
@@ -689,6 +690,130 @@ model GlobalCooldownSettings {
   updatedAt             DateTime @updatedAt
   
   @@map("global_cooldown_settings")
+}
+
+// ─── Pricing Plan Model (Task 45: Country-based Pricing) ────────────────────
+model PricingPlan {
+  id              String    @id @default(cuid())
+  name            String    // Starter, Pro, Enterprise
+  slug            String    @unique // starter, pro, enterprise
+  description     String?
+  
+  // Features
+  maxUsers        Int       // -1 for unlimited
+  maxOAuthClients Int       // -1 for unlimited
+  maxApiKeys      Int       // -1 for unlimited
+  maxWebhooks     Int       // -1 for unlimited
+  customDomain    Boolean   @default(false)
+  ssoEnabled      Boolean   @default(false)
+  advancedSecurity Boolean  @default(false)
+  prioritySupport Boolean   @default(false)
+  
+  // Country-based pricing (JSON structure: {"USD": 29, "BDT": 2500, ...})
+  pricing         Json      
+  currency        String    @default("USD") // Default currency
+  
+  // Billing intervals
+  billingIntervals Json     // {"monthly": true, "yearly": true, "yearly_discount": 20}
+  
+  isActive        Boolean   @default(true)
+  isDefault       Boolean   @default(false) // Default plan for new tenants
+  stripePriceIdMonthly String?  // Stripe Price ID for monthly
+  stripePriceIdYearly  String?  // Stripe Price ID for yearly
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  subscriptions   Subscription[]
+  
+  @@index([slug])
+  @@map("pricing_plans")
+}
+
+// ─── Subscription Model (Task 46: Stripe Integration) ───────────────────────
+model Subscription {
+  id                    String    @id @default(cuid())
+  tenantId              String    @unique // One subscription per tenant
+  
+  planId                String
+  plan                  PricingPlan @relation(fields: [planId], references: [id])
+  
+  // Stripe integration
+  stripeSubscriptionId  String?   @unique
+  stripeCustomerId      String?
+  
+  // Subscription details
+  status                SubscriptionStatus @default(ACTIVE)
+  billingInterval       String    @default("monthly") // monthly or yearly
+  currentPeriodStart    DateTime?
+  currentPeriodEnd      DateTime?
+  
+  // Payment info
+  currency              String    @default("USD")
+  amount                Float?    // Amount in smallest currency unit (cents)
+  
+  // Cancellation
+  cancelAtPeriodEnd     Boolean   @default(false)
+  canceledAt            DateTime?
+  
+  // Trial
+  trialStart            DateTime?
+  trialEnd              DateTime?
+  
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  
+  tenant                Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invoices              Invoice[]
+  
+  @@index([tenantId])
+  @@index([stripeSubscriptionId])
+  @@index([status])
+  @@map("subscriptions")
+}
+
+// ─── Invoice Model ──────────────────────────────────────────────────────────
+model Invoice {
+  id                    String    @id @default(cuid())
+  subscriptionId        String
+  subscription          Subscription @relation(fields: [subscriptionId], references: [id])
+  
+  // Invoice details
+  stripeInvoiceId       String?   @unique
+  amount                Float     // Amount in smallest currency unit
+  currency              String
+  status                InvoiceStatus
+  
+  // Dates
+  periodStart           DateTime
+  periodEnd             DateTime
+  paidAt                DateTime?
+  
+  // PDF
+  invoicePdfUrl         String?
+  
+  createdAt             DateTime  @default(now())
+  
+  @@index([subscriptionId])
+  @@index([stripeInvoiceId])
+  @@map("invoices")
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  UNPAID
+  INCOMPLETE
+}
+
+enum InvoiceStatus {
+  DRAFT
+  OPEN
+  PAID
+  VOID
+  UNCERAIN
 }
 
 
