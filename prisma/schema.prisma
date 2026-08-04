@@ -38,6 +38,8 @@ model User {
   passkeys            Passkey[]             // Task 13: WebAuthn passkeys
   passwordResetTokens PasswordResetToken[]  // Step 4: Password reset tokens
   twoFactorAuth       TwoFactorAuth?        // Task 20: 2FA TOTP
+  ownedOAuthClients   OAuthClient[]         // Task 23: SSO - owned applications
+  oauthAuthorizations OAuthAuthorization[]  // Task 25: SSO - granted authorizations
 
   @@index([email])
   @@index([username])
@@ -62,6 +64,109 @@ model TwoFactorAuth {
 
   @@index([userId])
   @@map("two_factor_auths")
+}
+
+// ─── OAuth Client Model (Task 23-24: SSO/OIDC) ──────────────────────────────
+model OAuthClient {
+  id                 String    @id @default(cuid())
+  clientId           String    @unique // Public client ID
+  clientSecret       String    // Encrypted client secret
+  name               String    // Application name
+  description        String?   // Application description
+  ownerUserId        String    // User who owns this client
+  redirectUris       Json      // Array of allowed redirect URIs
+  scopes             Json      // Array of allowed scopes
+  isPublic           Boolean   @default(false) // For PKCE flows
+  isActive           Boolean   @default(true)
+  logoUrl            String?
+  websiteUrl         String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  owner              User      @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  authorizations     OAuthAuthorization[]
+  authorizationCodes OAuthAuthorizationCode[]
+  accessTokens       OAuthAccessToken[]
+  refreshTokens      OAuthRefreshToken[]
+
+  @@index([clientId])
+  @@index([ownerUserId])
+  @@map("oauth_clients")
+}
+
+// ─── OAuth User Authorization (Task 25: SSO) ────────────────────────────────
+model OAuthAuthorization {
+  id              String    @id @default(cuid())
+  userId          String
+  clientId        String
+  scopes          Json      // Granted scopes
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  client          OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, clientId])
+  @@index([userId])
+  @@index([clientId])
+  @@map("oauth_authorizations")
+}
+
+// ─── OAuth Authorization Code (Task 24: OIDC) ───────────────────────────────
+model OAuthAuthorizationCode {
+  id            String    @id @default(cuid())
+  code          String    @unique
+  clientId      String
+  userId        String
+  redirectUri   String
+  scopes        Json
+  codeChallenge String?   // PKCE
+  codeChallengeMethod String? // PKCE: S256 or plain
+  expiresAt     DateTime
+  usedAt        DateTime?
+  createdAt     DateTime  @default(now())
+
+  client        OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([code])
+  @@index([expiresAt])
+  @@map("oauth_authorization_codes")
+}
+
+// ─── OAuth Access Token ─────────────────────────────────────────────────────
+model OAuthAccessToken {
+  id          String    @id @default(cuid())
+  token       String    @unique
+  clientId    String
+  userId      String
+  scopes      Json
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  client      OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([expiresAt])
+  @@map("oauth_access_tokens")
+}
+
+// ─── OAuth Refresh Token ────────────────────────────────────────────────────
+model OAuthRefreshToken {
+  id            String    @id @default(cuid())
+  token         String    @unique
+  clientId      String
+  userId        String
+  scopes        Json
+  expiresAt     DateTime
+  revokedAt     DateTime?
+  createdAt     DateTime  @default(now())
+
+  client        OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([expiresAt])
+  @@map("oauth_refresh_tokens")
 }
 
 // ─── Password Reset Token Model (Step 4) ────────────────────────────────────
