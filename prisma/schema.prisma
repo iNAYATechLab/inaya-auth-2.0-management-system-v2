@@ -30,6 +30,7 @@ model Tenant {
   webhooks        Webhook[]
   apiKeys         ApiKey[]
   subscription    Subscription? // Task 45-46: Billing
+  dataRequests    DataRequest[] // Task 51: GDPR data requests
   
   @@index([slug])
   @@index([domain])
@@ -89,6 +90,8 @@ model User {
   securitySettings    SecuritySettings?     // Task 34: Central security settings
   kycRecords          KYCRecord[]           // Tasks 35-38: KYC records
   loginMethodCooldowns LoginMethodCooldown[] // Tasks 39-41: Login method cooldowns
+  gdprConsent         GDPRConsent?          // Task 51: GDPR consent
+  dataRequests        DataRequest[]         // Task 51: Data download/delete requests
 
   @@unique([tenantId, email])
   @@unique([tenantId, username])
@@ -542,6 +545,82 @@ enum VerificationTier {
   BASIC      // No KYC, basic features
   VERIFIED   // KYC completed, green tick badge
   PREMIUM    // Enhanced verification (optional future tier)
+}
+
+// ─── CSRF Token Model (Task 50: CSRF Protection) ────────────────────────────
+model CSRFToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  sessionId String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  
+  @@index([token])
+  @@index([sessionId])
+  @@index([expiresAt])
+  @@map("csrf_tokens")
+}
+
+// ─── Security Log Model (Task 50: Security Logging) ─────────────────────────
+model SecurityLog {
+  id         String   @id @default(cuid())
+  eventType  String   // CSRF_VIOLATION, XSS_ATTEMPT, SQLI_ATTEMPT, etc.
+  userId     String?
+  tenantId   String?
+  ipAddress  String
+  userAgent  String
+  details    Json
+  severity   String   // low, medium, high, critical
+  createdAt  DateTime @default(now())
+  
+  @@index([tenantId])
+  @@index([userId])
+  @@index([eventType])
+  @@index([severity])
+  @@index([createdAt])
+  @@map("security_logs")
+}
+
+// ─── GDPR Consent Model (Task 51: GDPR Compliance) ──────────────────────────
+model GDPRConsent {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  privacyPolicyAccepted Boolean @default(false)
+  privacyPolicyAcceptedAt DateTime?
+  cookieConsent       Json     // { essential: true, analytics: false, marketing: false }
+  cookieConsentAt     DateTime?
+  dataProcessingAccepted Boolean @default(false)
+  dataProcessingAcceptedAt DateTime?
+  marketingConsent    Boolean  @default(false)
+  marketingConsentAt  DateTime?
+  updatedAt           DateTime @updatedAt
+  
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@map("gdpr_consents")
+}
+
+// ─── Data Request Model (Task 51: GDPR Data Download/Delete) ────────────────
+model DataRequest {
+  id          String   @id @default(cuid())
+  userId      String
+  tenantId    String
+  type        String   // DOWNLOAD, DELETE
+  status      String   // PENDING, PROCESSING, COMPLETED, FAILED
+  downloadUrl String?  // For DOWNLOAD requests
+  expiresAt   DateTime? // For download links
+  processedAt DateTime?
+  createdAt   DateTime @default(now())
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([tenantId])
+  @@index([type])
+  @@index([status])
+  @@map("data_requests")
 }
 
 // ─── Security Checkup Model (Task 31) ───────────────────────────────────────
