@@ -1,10 +1,14 @@
 // Auth.js v5 — Configuration
 // Handles providers, session, callbacks, pages, and security
+// Task 7: Added Facebook, Apple, Microsoft OAuth providers
 
 import type { NextAuthConfig } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import GitHub from 'next-auth/providers/github';
 import Google from 'next-auth/providers/google';
+import Facebook from 'next-auth/providers/facebook';
+import Apple from 'next-auth/providers/apple';
+import MicrosoftEntraID from 'next-auth/providers/microsoft-entra-id';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { LoginSchema } from '@/lib/utils/validations';
@@ -101,17 +105,39 @@ const authConfig: NextAuthConfig = {
       },
     }),
 
-    // GitHub OAuth Provider
+    // GitHub OAuth Provider (Task 7)
     GitHub({
       clientId: process.env.GITHUB_CLIENT_ID,
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
       allowDangerousEmailAccountLinking: true,
     }),
 
-    // Google OAuth Provider
+    // Google OAuth Provider (Task 7)
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      allowDangerousEmailAccountLinking: true,
+    }),
+
+    // Facebook/Meta OAuth Provider (Task 7)
+    Facebook({
+      clientId: process.env.FACEBOOK_CLIENT_ID,
+      clientSecret: process.env.FACEBOOK_CLIENT_SECRET,
+      allowDangerousEmailAccountLinking: true,
+    }),
+
+    // Apple OAuth Provider (Task 7)
+    Apple({
+      clientId: process.env.APPLE_CLIENT_ID,
+      clientSecret: process.env.APPLE_CLIENT_SECRET,
+      allowDangerousEmailAccountLinking: true,
+    }),
+
+    // Microsoft OAuth Provider (Task 7)
+    MicrosoftEntraID({
+      clientId: process.env.MICROSOFT_CLIENT_ID,
+      clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
+      issuer: process.env.MICROSOFT_ISSUER,
       allowDangerousEmailAccountLinking: true,
     }),
   ],

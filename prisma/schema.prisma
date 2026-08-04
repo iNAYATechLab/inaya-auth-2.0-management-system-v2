@@ -13,26 +13,33 @@ datasource db {
 
 // ─── User Model ──────────────────────────────────────────────────────────────
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  password      String?   // For credentials login (hashed with bcrypt)
-  role          Role      @default(USER)
-  isActive      Boolean   @default(true)
-  locale        String    @default("en")
-  lastLogin     DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id              String    @id @default(cuid())
+  name            String?
+  username        String?   @unique
+  email           String    @unique
+  emailVerified   DateTime?
+  backupEmail     String?   // Task 10: Backup email
+  image           String?
+  password        String?   // For credentials login (hashed with bcrypt)
+  phoneNumber     String?   @unique // Task 9: Mobile number
+  phoneVerified   DateTime? // Task 9: Phone verification timestamp
+  role            Role      @default(USER)
+  isActive        Boolean   @default(true)
+  locale          String    @default("en")
+  lastLogin       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   // Relations
-  accounts      Account[]
-  sessions      Session[]
-  auditLogs     AuditLog[]
-  refreshTokens RefreshToken[]
+  accounts        Account[]
+  sessions        Session[]
+  auditLogs       AuditLog[]
+  refreshTokens   RefreshToken[]
+  phoneOtps       PhoneOtp[] // Task 9: OTP records
 
   @@index([email])
+  @@index([username])
+  @@index([phoneNumber])
   @@index([role])
   @@map("users")
 }
@@ -135,4 +142,27 @@ enum AuditAction {
   ACCOUNT_DELETED
   FAILED_LOGIN
   TOKEN_REFRESH
+  EMAIL_VERIFIED
+  PHONE_VERIFIED
+  ACCOUNT_LINKED
+  ACCOUNT_UNLINKED
+  BACKUP_EMAIL_UPDATED
 }
+
+// ─── Phone OTP Model (Task 9) ────────────────────────────────────────────────
+model PhoneOtp {
+  id        String   @id @default(cuid())
+  userId    String
+  phoneNumber String
+  otp       String
+  expiresAt DateTime
+  verifiedAt DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([phoneNumber])
+  @@map("phone_otps")
+}
+
