@@ -29,6 +29,13 @@ model User {
   lastLogin       DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+  
+  // KYC & Verification (Tasks 35-38)
+  isVerified      Boolean   @default(false) // Green tick badge
+  verificationTier VerificationTier @default(BASIC)
+  kycStatus       KYCStatus @default(NOT_SUBMITTED)
+  kycSubmittedAt  DateTime?
+  kycVerifiedAt   DateTime?
 
   // Relations
   accounts            Account[]
@@ -45,6 +52,7 @@ model User {
   trustedDevices      TrustedDevice[]       // Task 33: Trusted devices
   proactiveProtections ProactiveProtection[] // Task 33: Proactive protection
   securitySettings    SecuritySettings?     // Task 34: Central security settings
+  kycRecords          KYCRecord[]           // Tasks 35-38: KYC records
 
   @@index([email])
   @@index([username])
@@ -313,6 +321,9 @@ enum AuditAction {
   ACCOUNT_LINKED
   ACCOUNT_UNLINKED
   BACKUP_EMAIL_UPDATED
+  KYC_SUBMITTED
+  KYC_VERIFIED
+  KYC_REJECTED
 }
 
 // ─── OTP Model (Tasks 16-18: Unified OTP for all delivery methods) ───────────
@@ -348,6 +359,79 @@ model OtpRateLimit {
   @@unique([recipient, recipientType])
   @@index([windowEnd])
   @@map("otp_rate_limits")
+}
+
+// ─── KYC Record Model (Tasks 35-38) ─────────────────────────────────────────
+model KYCRecord {
+  id                String    @id @default(cuid())
+  userId            String
+  type              KYCType
+  status            KYCStatus @default(PENDING)
+  
+  // Document details
+  documentType      String?   // passport, national_id, driving_license
+  documentNumber    String?   // Encrypted
+  documentFrontUrl  String?   // Encrypted file path
+  documentBackUrl   String?   // Encrypted file path
+  
+  // Selfie/Liveness
+  selfieUrl         String?   // Encrypted file path
+  videoSelfieUrl    String?   // Encrypted file path
+  livenessScore     Float?    // 0.0 to 1.0
+  
+  // Face verification
+  faceMatchScore    Float?    // 0.0 to 1.0
+  
+  // Third-party KYC service
+  kycProvider       String?   // onfido, jumio, sumsub, etc.
+  kycProviderId     String?   // External KYC provider's reference ID
+  kycProviderResponse Json?   // Full response from provider
+  
+  // Review
+  reviewedBy        String?   // Admin user ID who reviewed
+  reviewedAt        DateTime?
+  rejectionReason   String?
+  
+  // Privacy & Consent (Task 38)
+  consentGiven      Boolean   @default(false)
+  consentTimestamp  DateTime?
+  dataRetentionPolicy String? // How long to keep data
+  dataDeletedAt     DateTime?
+  
+  // Timestamps
+  submittedAt       DateTime?
+  verifiedAt        DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([status])
+  @@index([kycProvider])
+  @@map("kyc_records")
+}
+
+// ─── KYC Enums ──────────────────────────────────────────────────────────────
+enum KYCStatus {
+  NOT_SUBMITTED
+  PENDING
+  UNDER_REVIEW
+  VERIFIED
+  REJECTED
+}
+
+enum KYCType {
+  ID_VERIFICATION
+  FACE_VERIFICATION
+  LIVENESS_CHECK
+  FULL_KYC
+}
+
+enum VerificationTier {
+  BASIC      // No KYC, basic features
+  VERIFIED   // KYC completed, green tick badge
+  PREMIUM    // Enhanced verification (optional future tier)
 }
 
 // ─── Security Checkup Model (Task 31) ───────────────────────────────────────
