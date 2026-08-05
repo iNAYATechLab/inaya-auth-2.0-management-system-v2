@@ -1,5 +1,5 @@
-// Register Page (Task 6, 8)
-// Added: Username field, password strength meter, email verification notice
+// Register Page (Task 6, 8, 17)
+// Added: Username field with real-time availability check, password strength meter, email verification notice
 'use client';
 
 import { useTranslations } from 'next-intl';
@@ -7,11 +7,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { RegisterSchema, RegisterInput, validatePasswordStrength } from '@/lib/utils/validations';
 import { registerAction } from '@/lib/auth/actions';
-import { useActionState, useMemo } from 'react';
+import { useActionState, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { UsernameInput } from '@/components/forms/UsernameInput';
 
 interface RegisterPageProps {
   params: Promise<{ locale: string }>;
@@ -83,6 +84,7 @@ function PasswordStrengthMeter({ password }: { password: string }) {
 export default function RegisterPage({ params }: RegisterPageProps) {
   const t = useTranslations('auth.register');
   const common = useTranslations('common');
+  const [username, setUsername] = useState('');
 
   const [state, formAction, isPending] = useActionState(
     async (prevState: any, formData: FormData) => {
@@ -137,22 +139,16 @@ export default function RegisterPage({ params }: RegisterPageProps) {
               )}
             </div>
 
-            {/* Username (Task 8) */}
+            {/* Username (Task 8, 17: Real-time availability check) */}
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                type="text"
-                placeholder="johndoe"
-                {...registerForm('username')}
+              <UsernameInput
+                value={username}
+                onChange={setUsername}
                 disabled={isPending}
+                error={errors.username?.message}
               />
-              <p className="text-xs text-neutral-500">
-                3-30 characters, letters, numbers, underscores, hyphens only
-              </p>
-              {errors.username && (
-                <p className="text-sm text-error-600">{errors.username.message}</p>
-              )}
+              {/* Hidden input for form submission */}
+              <input type="hidden" {...registerForm('username')} value={username} />
             </div>
 
             {/* Email */}
