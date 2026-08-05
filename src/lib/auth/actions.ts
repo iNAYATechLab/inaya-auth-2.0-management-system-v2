@@ -135,9 +135,22 @@ export async function registerAction(
     // Hash password
     const hashedPassword = await hashPassword(password);
 
+    // Get or create default tenant for single-tenant mode
+    let defaultTenant = await prisma.tenant.findFirst();
+    if (!defaultTenant) {
+      defaultTenant = await prisma.tenant.create({
+        data: {
+          name: 'Default Tenant',
+          slug: 'default',
+          isActive: true,
+        },
+      });
+    }
+
     // Create user (email not verified yet — Task 6)
     const user = await prisma.user.create({
       data: {
+        tenantId: defaultTenant.id,
         name,
         username,
         email,

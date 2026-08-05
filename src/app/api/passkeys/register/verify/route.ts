@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { verifyPasskeyRegistration } from '@/lib/utils/passkeys';
 import { logAction } from '@/lib/utils/audit';
-import type { RegistrationResponseJSON } from '@simplewebauthn/browser';
+// Type will be inferred from request body
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const credential = body as RegistrationResponseJSON;
+    const credential = body as any;
 
     const result = await verifyPasskeyRegistration(
       session.user.id,

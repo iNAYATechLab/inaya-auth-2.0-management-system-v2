@@ -115,7 +115,7 @@ export async function verifyAndEnable2FAAction(token: string) {
         const secret = decryptData(twoFactorAuth.secret);
 
         // Verify token
-        const isValid = verifyTOTPToken(token, secret);
+        const isValid = await verifyTOTPToken(token, secret);
         if (!isValid) {
           throw new Error('Invalid TOTP token. Please try again.');
         }
@@ -244,7 +244,7 @@ export async function verify2FATokenAction(token: string) {
     }
 
     const secret = decryptData(twoFactorAuth.secret);
-    const isValid = verifyTOTPToken(token, secret);
+    const isValid = await verifyTOTPToken(token, secret);
 
     if (isValid) {
       // Update last verified

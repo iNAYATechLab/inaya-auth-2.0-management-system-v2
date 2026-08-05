@@ -5,7 +5,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
-import { logSecurityEvent } from '../security.util';
+import { logSecurityEvent } from './security.util';
 
 // ─── GDPR Consent Management ─────────────────────────────────────────────────
 
@@ -35,6 +35,7 @@ export async function acceptPrivacyPolicy(
       userId,
       privacyPolicyAccepted: true,
       privacyPolicyAcceptedAt: new Date(),
+      cookieConsent: { essential: true, analytics: false, marketing: false, preferences: false },
     },
   });
   
@@ -102,6 +103,7 @@ export async function acceptDataProcessing(
       userId,
       dataProcessingAccepted: true,
       dataProcessingAcceptedAt: new Date(),
+      cookieConsent: { essential: true, analytics: false, marketing: false, preferences: false },
     },
   });
 }
@@ -236,12 +238,10 @@ export async function processDataDownloadRequest(requestId: string): Promise<{
       sessions: request.user.sessions.map(s => ({
         id: s.id,
         expires: s.expires,
-        createdAt: s.createdAt,
       })),
       oauthConnections: request.user.accounts.map(a => ({
         provider: a.provider,
         providerAccountId: a.providerAccountId,
-        createdAt: a.createdAt,
       })),
       apiKeys: [], // Will be populated from tenant context
       webhooks: [], // Will be populated from tenant context

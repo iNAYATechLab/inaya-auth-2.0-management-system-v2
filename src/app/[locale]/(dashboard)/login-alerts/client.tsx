@@ -42,7 +42,7 @@ export default function LoginAlertsClient() {
   async function loadAlerts() {
     const res = await getLoginAlertsAction();
     if (res.success && res.data) {
-      setAlerts(res.data as LoginAlert[]);
+      setAlerts(res.data as unknown as LoginAlert[]);
     }
     setLoading(false);
   }

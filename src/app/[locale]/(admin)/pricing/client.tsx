@@ -54,7 +54,7 @@ export default function PricingClient() {
     ssoEnabled: false,
     advancedSecurity: false,
     prioritySupport: false,
-    pricing: { USD: 0, BDT: 0 },
+    pricing: { USD: 0, BDT: 0, EUR: 0, GBP: 0 },
     currency: 'USD',
     billingIntervals: { monthly: true, yearly: true, yearly_discount: 20 },
     isActive: true,
@@ -68,7 +68,7 @@ export default function PricingClient() {
   async function loadPlans() {
     const result = await getPricingPlansAction();
     if (result.success && result.plans) {
-      setPlans(result.plans);
+      setPlans(result.plans as unknown as PricingPlan[]);
     }
     setLoading(false);
   }
@@ -86,7 +86,7 @@ export default function PricingClient() {
       ssoEnabled: false,
       advancedSecurity: false,
       prioritySupport: false,
-      pricing: { USD: 0, BDT: 0 },
+      pricing: { USD: 0, BDT: 0, EUR: 0, GBP: 0 },
       currency: 'USD',
       billingIntervals: { monthly: true, yearly: true, yearly_discount: 20 },
       isActive: true,
@@ -286,28 +286,28 @@ export default function PricingClient() {
                   <Label>Custom Domain</Label>
                   <Switch
                     checked={formData.customDomain}
-                    onCheckedChange={(checked) => setFormData({ ...formData, customDomain: checked })}
+                    onCheckedChange={(checked: boolean) => setFormData({ ...formData, customDomain: checked })}
                   />
                 </div>
                 <div className="flex items-center justify-between">
                   <Label>SSO Enabled</Label>
                   <Switch
                     checked={formData.ssoEnabled}
-                    onCheckedChange={(checked) => setFormData({ ...formData, ssoEnabled: checked })}
+                    onCheckedChange={(checked: boolean) => setFormData({ ...formData, ssoEnabled: checked })}
                   />
                 </div>
                 <div className="flex items-center justify-between">
                   <Label>Advanced Security</Label>
                   <Switch
                     checked={formData.advancedSecurity}
-                    onCheckedChange={(checked) => setFormData({ ...formData, advancedSecurity: checked })}
+                    onCheckedChange={(checked: boolean) => setFormData({ ...formData, advancedSecurity: checked })}
                   />
                 </div>
                 <div className="flex items-center justify-between">
                   <Label>Priority Support</Label>
                   <Switch
                     checked={formData.prioritySupport}
-                    onCheckedChange={(checked) => setFormData({ ...formData, prioritySupport: checked })}
+                    onCheckedChange={(checked: boolean) => setFormData({ ...formData, prioritySupport: checked })}
                   />
                 </div>
               </div>
@@ -373,7 +373,7 @@ export default function PricingClient() {
                   <Label>Monthly Billing</Label>
                   <Switch
                     checked={formData.billingIntervals.monthly}
-                    onCheckedChange={(checked) => setFormData({ 
+                    onCheckedChange={(checked: boolean) => setFormData({ 
                       ...formData, 
                       billingIntervals: { ...formData.billingIntervals, monthly: checked }
                     })}
@@ -383,7 +383,7 @@ export default function PricingClient() {
                   <Label>Yearly Billing</Label>
                   <Switch
                     checked={formData.billingIntervals.yearly}
-                    onCheckedChange={(checked) => setFormData({ 
+                    onCheckedChange={(checked: boolean) => setFormData({ 
                       ...formData, 
                       billingIntervals: { ...formData.billingIntervals, yearly: checked }
                     })}
@@ -414,14 +414,14 @@ export default function PricingClient() {
                 <Label>Active</Label>
                 <Switch
                   checked={formData.isActive}
-                  onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                  onCheckedChange={(checked: boolean) => setFormData({ ...formData, isActive: checked })}
                 />
               </div>
               <div className="flex items-center justify-between">
                 <Label>Default Plan</Label>
                 <Switch
                   checked={formData.isDefault}
-                  onCheckedChange={(checked) => setFormData({ ...formData, isDefault: checked })}
+                  onCheckedChange={(checked: boolean) => setFormData({ ...formData, isDefault: checked })}
                 />
               </div>
             </div>

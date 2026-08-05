@@ -37,7 +37,7 @@ export default function GDPRDataManagementPage() {
   async function loadRequests() {
     const result = await getUserDataRequestsAction();
     if (result.success && result.requests) {
-      setRequests(result.requests);
+      setRequests(result.requests as unknown as DataRequest[]);
     }
     setLoading(false);
   }

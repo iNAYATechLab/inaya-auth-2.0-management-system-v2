@@ -13,7 +13,7 @@ if (!stripeSecretKey) {
 }
 
 export const stripe = new Stripe(stripeSecretKey || 'sk_test_dummy', {
-  apiVersion: '2024-12-18.acacia',
+  apiVersion: '2026-07-29.dahlia',
   typescript: true,
 });
 

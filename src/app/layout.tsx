@@ -7,7 +7,7 @@ import '@/styles/globals.css';
 
 // ─── Fonts ───────────────────────────────────────────────────────────────────
 const inter = Inter({
-  subsets: ['latin', 'bengali'],
+  subsets: ['latin', 'latin-ext'],
   variable: '--font-inter',
   display: 'swap',
 });

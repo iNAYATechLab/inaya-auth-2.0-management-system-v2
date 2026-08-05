@@ -50,7 +50,7 @@ export default function AdminTenantsClient() {
   async function loadTenants() {
     const result = await getAllTenantsAdminAction(page, 20);
     if (result.success && result.tenants) {
-      setTenants(result.tenants as Tenant[]);
+      setTenants(result.tenants as unknown as Tenant[]);
       setTotalPages(result.pagination?.totalPages || 1);
     }
     setLoading(false);
@@ -84,12 +84,13 @@ export default function AdminTenantsClient() {
       includeAuditLogs: false,
     });
 
-    if (result.success && result.data) {
-      const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: 'application/json' });
+    if (result.success && (result as any).data) {
+      const data = (result as any).data;
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = result.filename || 'tenant-export.json';
+      a.download = (result as any).filename || 'tenant-export.json';
       a.click();
       URL.revokeObjectURL(url);
     }

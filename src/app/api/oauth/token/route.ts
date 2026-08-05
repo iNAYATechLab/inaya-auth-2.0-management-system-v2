@@ -175,7 +175,7 @@ async function handleAuthorizationCodeGrant(body: any): Promise<NextResponse> {
       token: accessToken,
       clientId: client.id,
       userId: authCode.userId,
-      scopes: authCode.scopes,
+      scopes: authCode.scopes as any,
       expiresAt: accessTokenExpiresAt,
     },
   });
@@ -198,7 +198,7 @@ async function handleAuthorizationCodeGrant(body: any): Promise<NextResponse> {
         token: refreshToken,
         clientId: client.id,
         userId: authCode.userId,
-        scopes: authCode.scopes,
+        scopes: authCode.scopes as any,
         expiresAt: refreshTokenExpiresAt,
       },
     });
@@ -315,7 +315,7 @@ async function handleRefreshTokenGrant(body: any): Promise<NextResponse> {
       token: accessToken,
       clientId: client.id,
       userId: storedRefreshToken.userId,
-      scopes: storedRefreshToken.scopes,
+      scopes: storedRefreshToken.scopes as any,
       expiresAt: accessTokenExpiresAt,
     },
   });
@@ -343,7 +343,7 @@ async function handleRefreshTokenGrant(body: any): Promise<NextResponse> {
       token: newRefreshToken,
       clientId: client.id,
       userId: storedRefreshToken.userId,
-      scopes: storedRefreshToken.scopes,
+      scopes: storedRefreshToken.scopes as any,
       expiresAt: newRefreshTokenExpiresAt,
     },
   });

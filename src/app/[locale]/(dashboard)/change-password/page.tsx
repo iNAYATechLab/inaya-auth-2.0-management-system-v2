@@ -19,7 +19,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 // Password Strength Indicator
 function PasswordStrengthMeter({ password }: { password: string }) {
   const strength = useMemo(() => {
-    if (!password) return { score: 0, label: '', checks: {} };
     
     const checks = {
       length: password.length >= 8,
@@ -188,9 +187,9 @@ export default function ChangePasswordPage() {
                 </div>
               )}
 
-              {state?.success && (
+              {state && 'success' in state && state.success && (
                 <div className="p-3 bg-success-50 border border-success-200 rounded-lg">
-                  <p className="text-sm text-success-700">{state.message}</p>
+                  <p className="text-sm text-success-700">{(state as any).message}</p>
                 </div>
               )}
 

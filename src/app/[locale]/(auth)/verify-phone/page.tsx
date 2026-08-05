@@ -121,7 +121,6 @@ export default function VerifyPhonePage() {
                 <Label htmlFor="phoneNumber">Phone Number</Label>
                 <Input
                   id="phoneNumber"
-                  name="phoneNumber"
                   type="tel"
                   placeholder="+8801712345678"
                   {...phoneForm.register('phoneNumber')}
@@ -159,7 +158,6 @@ export default function VerifyPhonePage() {
                 <Label htmlFor="otp">6-Digit OTP</Label>
                 <Input
                   id="otp"
-                  name="otp"
                   type="text"
                   placeholder="123456"
                   maxLength={6}

@@ -20,8 +20,6 @@ interface RegisterPageProps {
 // Password Strength Indicator Component (Task 8)
 function PasswordStrengthMeter({ password }: { password: string }) {
   const strength = useMemo(() => {
-    if (!password) return { score: 0, label: '', checks: {} };
-    
     const checks = {
       length: password.length >= 8,
       uppercase: /[A-Z]/.test(password),

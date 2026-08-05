@@ -16,14 +16,6 @@ declare module 'next-auth' {
   }
 }
 
-// Extend JWT token type
-declare module 'next-auth/jwt' {
-  interface JWT {
-    id: string;
-    role: string;
-  }
-}
-
 // Role types
 export type UserRole = 'USER' | 'ADMIN' | 'MODERATOR' | 'SUPERADMIN';
 

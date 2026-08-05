@@ -250,16 +250,17 @@ const authConfig: NextAuthConfig = {
         await logAction({
           userId: user.id!,
           action: 'LOGIN',
-          description: `User logged in via ${account.provider}`,
+          description: `User logged in via ${account?.provider || "unknown"}`,
         });
       }
     },
 
     // Triggered when user signs out
-    async signOut({ token }) {
-      if (token?.id) {
+    async signOut({ session, token }: any) {
+      const userId = session?.user?.id || token?.id;
+      if (userId) {
         await logAction({
-          userId: token.id as string,
+          userId: userId as string,
           action: 'LOGOUT',
           description: 'User logged out',
         });

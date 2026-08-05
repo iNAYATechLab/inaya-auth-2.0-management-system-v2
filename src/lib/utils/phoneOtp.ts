@@ -46,7 +46,7 @@ export async function generatePhoneOtp(
   }
 
   // Delete any existing OTPs for this user
-  await prisma.phoneOtp.deleteMany({
+  await prisma.otpCode.deleteMany({
     where: { userId },
   });
 
@@ -55,11 +55,13 @@ export async function generatePhoneOtp(
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
   // Store OTP in database
-  await prisma.phoneOtp.create({
+  await prisma.otpCode.create({
     data: {
       userId,
-      phoneNumber,
-      otp,
+      recipient: phoneNumber,
+      recipientType: 'phone',
+      code: otp,
+      purpose: 'verify-phone',
       expiresAt,
     },
   });
@@ -82,10 +84,12 @@ export async function verifyPhoneOtp(
   otp: string
 ): Promise<{ success: boolean; error?: string }> {
   // Find the OTP record
-  const otpRecord = await prisma.phoneOtp.findFirst({
+  const otpRecord = await prisma.otpCode.findFirst({
     where: {
       userId,
-      phoneNumber,
+      recipient: phoneNumber,
+      recipientType: 'phone',
+      purpose: 'verify-phone',
       verifiedAt: null, // Not yet verified
     },
     orderBy: {
@@ -103,12 +107,12 @@ export async function verifyPhoneOtp(
   }
 
   // Verify OTP
-  if (otpRecord.otp !== otp) {
+  if (otpRecord.code !== otp) {
     return { success: false, error: 'Invalid OTP. Please try again.' };
   }
 
   // Mark OTP as verified
-  await prisma.phoneOtp.update({
+  await prisma.otpCode.update({
     where: { id: otpRecord.id },
     data: { verifiedAt: new Date() },
   });
@@ -145,7 +149,7 @@ export async function resendPhoneOtp(
   phoneNumber: string
 ): Promise<{ success: boolean; error?: string }> {
   // Check if there's a recent OTP (rate limiting - 60 seconds)
-  const recentOtp = await prisma.phoneOtp.findFirst({
+  const recentOtp = await prisma.otpCode.findFirst({
     where: {
       userId,
       createdAt: {

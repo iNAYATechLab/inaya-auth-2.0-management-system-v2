@@ -32,10 +32,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Find OTP record
-    const otpRecord = await prisma.phoneOtp.findFirst({
+    const otpRecord = await prisma.otpCode.findFirst({
       where: {
         userId: user.id,
-        phoneNumber,
+        recipient: phoneNumber,
+        recipientType: 'phone',
+        purpose: 'login',
         verifiedAt: null,
       },
       orderBy: { createdAt: 'desc' },
@@ -55,7 +57,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (otpRecord.otp !== otp) {
+    if (otpRecord.code !== otp) {
       await logAction({
         userId: user.id,
         action: 'FAILED_LOGIN',
@@ -68,7 +70,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Mark OTP as verified
-    await prisma.phoneOtp.update({
+    await prisma.otpCode.update({
       where: { id: otpRecord.id },
       data: { verifiedAt: new Date() },
     });

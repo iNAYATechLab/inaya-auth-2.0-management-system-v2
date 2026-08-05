@@ -32,7 +32,7 @@ export default function ApiKeysClient() {
   async function loadApiKeys() {
     const result = await getApiKeysAction();
     if (result.success && result.apiKeys) {
-      setApiKeys(result.apiKeys);
+      setApiKeys(result.apiKeys as unknown as ApiKey[]);
     }
     setLoading(false);
   }

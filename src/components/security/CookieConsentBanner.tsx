@@ -8,7 +8,8 @@ import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { X, Cookie } from 'lucide-react';
-import { updateCookieConsentAction, type CookieConsent } from '@/lib/security/gdpr.util';
+import { updateCookieConsentAction } from '@/lib/security/gdpr.actions';
+import type { CookieConsent } from '@/lib/security/gdpr.util';
 
 export default function CookieConsentBanner() {
   const [show, setShow] = useState(false);

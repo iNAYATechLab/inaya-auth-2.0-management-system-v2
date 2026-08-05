@@ -42,7 +42,7 @@ export default function AdminSubscriptionsClient() {
   async function loadSubscriptions() {
     const result = await getAllSubscriptionsAdminAction(page, 20);
     if (result.success && result.subscriptions) {
-      setSubscriptions(result.subscriptions as Subscription[]);
+      setSubscriptions(result.subscriptions as unknown as Subscription[]);
       setTotalPages(result.pagination?.totalPages || 1);
     }
     setLoading(false);

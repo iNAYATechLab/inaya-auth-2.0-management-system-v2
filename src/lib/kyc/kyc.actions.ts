@@ -20,7 +20,7 @@ export async function submitKYCDocumentsAction(
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return { error: 'Unauthorized' };
+      return { success: false, error: 'Unauthorized' };
     }
 
     const userId = session.user.id;
@@ -34,13 +34,13 @@ export async function submitKYCDocumentsAction(
     });
 
     if (existingKYC) {
-      return { error: 'You already have a pending KYC submission' };
+      return { success: false, error: 'You already have a pending KYC submission' };
     }
 
     // Validate consent
     const consentGiven = formData.get('consent') === 'true';
     if (!consentGiven) {
-      return { error: 'You must provide consent to proceed with KYC' };
+      return { success: false, error: 'You must provide consent to proceed with KYC' };
     }
 
     // Get uploaded files
@@ -52,7 +52,7 @@ export async function submitKYCDocumentsAction(
 
     // Validate files
     if (!documentFront || !selfie) {
-      return { error: 'Document front and selfie are required' };
+      return { success: false, error: 'Document front and selfie are required' };
     }
 
     const docValidation = validateFile(
@@ -61,7 +61,7 @@ export async function submitKYCDocumentsAction(
       10 * 1024 * 1024 // 10MB
     );
     if (!docValidation.valid) {
-      return { error: `Invalid document: ${docValidation.error}` };
+      return { success: false, error: `Invalid document: ${docValidation.error}` };
     }
 
     const selfieValidation = validateFile(
@@ -70,7 +70,7 @@ export async function submitKYCDocumentsAction(
       5 * 1024 * 1024 // 5MB
     );
     if (!selfieValidation.valid) {
-      return { error: `Invalid selfie: ${selfieValidation.error}` };
+      return { success: false, error: `Invalid selfie: ${selfieValidation.error}` };
     }
 
     // Save encrypted files
@@ -103,7 +103,7 @@ export async function submitKYCDocumentsAction(
         50 * 1024 * 1024 // 50MB
       );
       if (!videoValidation.valid) {
-        return { error: `Invalid video: ${videoValidation.error}` };
+        return { success: false, error: `Invalid video: ${videoValidation.error}` };
       }
 
       videoSelfiePath = generateSecureFilePath(userId, 'video_selfie');
@@ -114,12 +114,12 @@ export async function submitKYCDocumentsAction(
       // Perform liveness detection
       const livenessResult = await detectLiveness(videoSelfiePath, videoSelfieIv);
       if (!livenessResult.success) {
-        return { error: livenessResult.error || 'Liveness detection failed' };
+        return { success: false, error: livenessResult.error || 'Liveness detection failed' };
       }
       livenessScore = livenessResult.livenessScore;
 
       if (!livenessResult.isLive) {
-        return { error: 'Liveness detection failed. Please ensure you are recording a live video.' };
+        return { success: false, error: 'Liveness detection failed. Please ensure you are recording a live video.' };
       }
     }
 
@@ -132,7 +132,7 @@ export async function submitKYCDocumentsAction(
     );
 
     if (!faceResult.success) {
-      return { error: faceResult.error || 'Face verification failed' };
+      return { success: false, error: faceResult.error || 'Face verification failed' };
     }
 
     // Calculate overall score
@@ -234,7 +234,7 @@ export async function submitKYCDocumentsAction(
     };
   } catch (error) {
     console.error('KYC submission error:', error);
-    return { error: 'Failed to submit KYC' };
+    return { success: false, error: 'Failed to submit KYC' };
   }
 }
 
@@ -295,7 +295,7 @@ export async function approveKYCAction(kycId: string): Promise<{ success: boolea
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return { error: 'Unauthorized' };
+      return { success: false, error: 'Unauthorized' };
     }
 
     // Check if user is admin
@@ -305,7 +305,7 @@ export async function approveKYCAction(kycId: string): Promise<{ success: boolea
     });
 
     if (!adminUser || !['ADMIN', 'SUPERADMIN'].includes(adminUser.role)) {
-      return { error: 'Unauthorized: Admin access required' };
+      return { success: false, error: 'Unauthorized: Admin access required' };
     }
 
     const kycRecord = await prisma.kYCRecord.findUnique({
@@ -313,7 +313,7 @@ export async function approveKYCAction(kycId: string): Promise<{ success: boolea
     });
 
     if (!kycRecord) {
-      return { error: 'KYC record not found' };
+      return { success: false, error: 'KYC record not found' };
     }
 
     // Update KYC record
@@ -351,7 +351,7 @@ export async function approveKYCAction(kycId: string): Promise<{ success: boolea
     return { success: true };
   } catch (error) {
     console.error('Approve KYC error:', error);
-    return { error: 'Failed to approve KYC' };
+    return { success: false, error: 'Failed to approve KYC' };
   }
 }
 
@@ -365,7 +365,7 @@ export async function rejectKYCAction(
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return { error: 'Unauthorized' };
+      return { success: false, error: 'Unauthorized' };
     }
 
     // Check if user is admin
@@ -375,7 +375,7 @@ export async function rejectKYCAction(
     });
 
     if (!adminUser || !['ADMIN', 'SUPERADMIN'].includes(adminUser.role)) {
-      return { error: 'Unauthorized: Admin access required' };
+      return { success: false, error: 'Unauthorized: Admin access required' };
     }
 
     const kycRecord = await prisma.kYCRecord.findUnique({
@@ -383,7 +383,7 @@ export async function rejectKYCAction(
     });
 
     if (!kycRecord) {
-      return { error: 'KYC record not found' };
+      return { success: false, error: 'KYC record not found' };
     }
 
     // Update KYC record
@@ -418,7 +418,7 @@ export async function rejectKYCAction(
     return { success: true };
   } catch (error) {
     console.error('Reject KYC error:', error);
-    return { error: 'Failed to reject KYC' };
+    return { success: false, error: 'Failed to reject KYC' };
   }
 }
 
@@ -429,7 +429,7 @@ export async function deleteKYCDataAction(): Promise<{ success: boolean; error?:
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return { error: 'Unauthorized' };
+      return { success: false, error: 'Unauthorized' };
     }
 
     const userId = session.user.id;
@@ -485,6 +485,6 @@ export async function deleteKYCDataAction(): Promise<{ success: boolean; error?:
     return { success: true };
   } catch (error) {
     console.error('Delete KYC data error:', error);
-    return { error: 'Failed to delete KYC data' };
+    return { success: false, error: 'Failed to delete KYC data' };
   }
 }

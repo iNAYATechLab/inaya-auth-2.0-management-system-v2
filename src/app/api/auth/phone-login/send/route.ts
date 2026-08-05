@@ -45,9 +45,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Check rate limit (60 seconds)
-    const recentOtp = await prisma.phoneOtp.findFirst({
+    const recentOtp = await prisma.otpCode.findFirst({
       where: {
         userId: user.id,
+        recipientType: 'phone',
+        purpose: 'login',
         createdAt: {
           gte: new Date(Date.now() - 60 * 1000),
         },
@@ -62,9 +64,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Delete existing unverified OTPs
-    await prisma.phoneOtp.deleteMany({
+    await prisma.otpCode.deleteMany({
       where: {
         userId: user.id,
+        recipientType: 'phone',
+        purpose: 'login',
         verifiedAt: null,
       },
     });
@@ -73,11 +77,13 @@ export async function POST(request: NextRequest) {
     const otp = crypto.randomInt(100000, 999999).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min
 
-    await prisma.phoneOtp.create({
+    await prisma.otpCode.create({
       data: {
         userId: user.id,
-        phoneNumber,
-        otp,
+        recipient: phoneNumber,
+        recipientType: 'phone',
+        code: otp,
+        purpose: 'login',
         expiresAt,
       },
     });

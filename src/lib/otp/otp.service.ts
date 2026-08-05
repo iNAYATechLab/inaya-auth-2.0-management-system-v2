@@ -378,7 +378,7 @@ export class OTPService {
   ): Promise<OTPSendResult> {
     return this.generateAndSendOTP({
       recipient,
-      recipientType,
+      recipientType: recipientType as 'email' | 'phone' | 'telegram',
       purpose,
       ...options,
     });

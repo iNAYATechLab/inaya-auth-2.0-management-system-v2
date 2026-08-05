@@ -38,12 +38,25 @@ export async function createOAuthClientAction(
     }
 
     // Generate client credentials
+    // Get or create default tenant
+    let defaultTenant = await prisma.tenant.findFirst();
+    if (!defaultTenant) {
+      defaultTenant = await prisma.tenant.create({
+        data: {
+          name: 'Default Tenant',
+          slug: 'default',
+          isActive: true,
+        },
+      });
+    }
+
     const { clientId, clientSecret } = generateClientCredentials();
 
     // Create client
     const client = await prisma.oAuthClient.create({
       data: {
         clientId,
+        tenantId: defaultTenant.id,
         clientSecret,
         name,
         description: description || null,

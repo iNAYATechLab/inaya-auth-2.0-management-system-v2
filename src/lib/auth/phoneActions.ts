@@ -203,7 +203,7 @@ export async function sendPhoneLoginOtpAction(
     }
 
     // Delete any existing login OTPs for this user
-    await prisma.phoneOtp.deleteMany({
+    await prisma.otpCode.deleteMany({
       where: {
         userId: user.id,
         verifiedAt: null,
@@ -214,11 +214,13 @@ export async function sendPhoneLoginOtpAction(
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-    await prisma.phoneOtp.create({
+    await prisma.otpCode.create({
       data: {
         userId: user.id,
-        phoneNumber,
-        otp,
+        recipient: phoneNumber,
+        recipientType: 'phone',
+        code: otp,
+        purpose: 'login',
         expiresAt,
       },
     });
@@ -265,10 +267,12 @@ export async function verifyPhoneLoginOtpAction(
     }
 
     // Find OTP record
-    const otpRecord = await prisma.phoneOtp.findFirst({
+    const otpRecord = await prisma.otpCode.findFirst({
       where: {
         userId: user.id,
-        phoneNumber,
+        recipient: phoneNumber,
+        recipientType: 'phone',
+        purpose: 'login',
         verifiedAt: null,
       },
       orderBy: { createdAt: 'desc' },
@@ -282,7 +286,7 @@ export async function verifyPhoneLoginOtpAction(
       return { error: 'OTP has expired. Please request a new one.' };
     }
 
-    if (otpRecord.otp !== otp) {
+    if (otpRecord.code !== otp) {
       await logAction({
         userId: user.id,
         action: 'FAILED_LOGIN',
@@ -292,7 +296,7 @@ export async function verifyPhoneLoginOtpAction(
     }
 
     // Mark OTP as verified
-    await prisma.phoneOtp.update({
+    await prisma.otpCode.update({
       where: { id: otpRecord.id },
       data: { verifiedAt: new Date() },
     });

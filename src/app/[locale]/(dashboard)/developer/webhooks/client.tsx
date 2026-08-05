@@ -59,7 +59,7 @@ export default function WebhooksClient() {
   async function loadWebhooks() {
     const result = await getWebhooksAction();
     if (result.success && result.webhooks) {
-      setWebhooks(result.webhooks);
+      setWebhooks(result.webhooks as unknown as WebhookItem[]);
     }
     setLoading(false);
   }
@@ -92,8 +92,8 @@ export default function WebhooksClient() {
   async function viewDeliveries(webhookId: string) {
     setSelectedWebhook(webhookId);
     const result = await getWebhookDeliveriesAction(webhookId);
-    if (result.success && result.deliveries) {
-      setDeliveries(result.deliveries);
+    if ((result as any).success && (result as any).deliveries) {
+      setDeliveries((result as any).deliveries as unknown as WebhookDelivery[]);
     }
   }
 

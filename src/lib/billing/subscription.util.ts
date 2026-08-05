@@ -83,8 +83,8 @@ export async function createSubscription(
       billingInterval: interval,
       currency,
       amount: stripeSubscription.items.data[0].price.unit_amount || 0,
-      currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
-      currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
+      currentPeriodStart: new Date((stripeSubscription as any).current_period_start * 1000),
+      currentPeriodEnd: new Date((stripeSubscription as any).current_period_end * 1000),
     },
   });
 

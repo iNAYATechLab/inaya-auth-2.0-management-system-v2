@@ -1,15 +1,17 @@
 // Locale Layout
 // Wraps all pages with locale-specific providers and HTML attributes
 
-import { NextIntlClientProvider, useMessages } from 'next-intl';
+import { NextIntlClientProvider } from 'next-intl';
+import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { locales, isValidLocale, localeDirections } from '@/i18n/config';
 import { Inter, Poppins } from 'next/font/google';
+import { Providers } from '@/components/providers/SessionProvider';
 import '@/styles/globals.css';
 
 // ─── Fonts ───────────────────────────────────────────────────────────────────
 const inter = Inter({
-  subsets: ['latin', 'bengali'],
+  subsets: ['latin', 'latin-ext'],
   variable: '--font-inter',
   display: 'swap',
 });
@@ -39,15 +41,17 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
   // Get direction for RTL support
   const direction = localeDirections[locale as keyof typeof localeDirections];
 
-  // Get messages
-  const messages = useMessages();
+  // Get messages (async-compatible)
+  const messages = await getMessages();
 
   return (
     <html lang={locale} dir={direction} suppressHydrationWarning>
       <body className={`${inter.variable} ${poppins.variable} font-sans antialiased`}>
-        <NextIntlClientProvider locale={locale} messages={messages}>
-          {children}
-        </NextIntlClientProvider>
+        <Providers>
+          <NextIntlClientProvider locale={locale} messages={messages}>
+            {children}
+          </NextIntlClientProvider>
+        </Providers>
       </body>
     </html>
   );

@@ -101,6 +101,29 @@
       "activeUsers": "Active Users",
       "newUsers": "New Users",
       "auditLogs": "Audit Logs"
+    },
+    "navigation": {
+      "dashboard": "Dashboard",
+      "profile": "Profile",
+      "security": "Security Settings",
+      "twoFactor": "Two-Factor Auth",
+      "passkeys": "Passkeys",
+      "sessions": "Sessions",
+      "billing": "Billing",
+      "apiKeys": "API Keys",
+      "webhooks": "Webhooks",
+      "kyc": "KYC Verification",
+      "dataManagement": "Data Management",
+      "settings": "Settings"
+    },
+    "header": {
+      "searchPlaceholder": "Search..."
+    },
+    "dropdown": {
+      "profile": "Profile",
+      "security": "Security",
+      "settings": "Settings",
+      "signOut": "Sign Out"
     }
   },
   "users": {

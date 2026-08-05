@@ -18,7 +18,7 @@ export const OAUTH_CONFIG = {
 };
 
 // RSA Key Pair for JWT signing (JWKS)
-let keyPair: { publicKey: jose.KeyLike; privateKey: jose.KeyLike; jwk: jose.JWK } | null = null;
+let keyPair: { publicKey: any; privateKey: any; jwk: jose.JWK } | null = null;
 
 /**
  * Generate or retrieve RSA key pair for JWT signing

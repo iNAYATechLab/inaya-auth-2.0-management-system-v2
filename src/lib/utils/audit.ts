@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 // Audit Logger Utility
 
 import { prisma } from '@/lib/prisma';
@@ -24,7 +25,7 @@ export async function logAction(params: AuditLogParams) {
         description: params.description,
         ipAddress: params.ipAddress || null,
         userAgent: params.userAgent || null,
-        metadata: params.metadata || null,
+        metadata: params.metadata ? params.metadata : Prisma.JsonNull,
       },
     });
   } catch (error) {

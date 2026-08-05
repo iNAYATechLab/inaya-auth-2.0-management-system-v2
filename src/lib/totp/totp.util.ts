@@ -5,50 +5,57 @@
  * Uses Google Authenticator compatible TOTP
  */
 
-import { authenticator } from 'otplib';
+import { generate, generateSecret, verify } from 'otplib';
 import * as qrcode from 'qrcode';
 import crypto from 'crypto';
 
-// Configure authenticator
-authenticator.options = {
-  window: 1, // Allow 1 step before/after for clock skew
-  step: 30,  // 30 second window
-};
+// TOTP Configuration
+const TOTP_STEP = 30; // 30 second window
+const TOTP_DIGITS = 6;
 
 /**
- * Generate a new TOTP secret
+ * Generate a new TOTP secret (Base32 encoded)
  */
 export function generateTOTPSecret(): string {
-  return authenticator.generateSecret();
+  return generateSecret();
 }
 
 /**
  * Generate TOTP token from secret
  */
-export function generateTOTPToken(secret: string): string {
-  return authenticator.generate(secret);
+export async function generateTOTPToken(secret: string): Promise<string> {
+  return generate({ secret });
 }
 
 /**
  * Verify TOTP token
+ * Allows 1 step window (30 seconds before/after) for clock skew
  */
-export function verifyTOTPToken(token: string, secret: string): boolean {
+export async function verifyTOTPToken(token: string, secret: string): Promise<boolean> {
   try {
-    return authenticator.verify({ token, secret });
+    // Verify TOTP token
+    const result = await verify({
+      token,
+      secret,
+    });
+    
+    return result.valid;
   } catch (error) {
     return false;
   }
 }
 
 /**
- * Generate QR code URI for authenticator app
+ * Generate OTP Auth URI for authenticator app QR code
  */
 export function generateTOTPUri(
   email: string,
   secret: string,
   issuer: string = 'iNAYA Auth'
 ): string {
-  return authenticator.keyuri(email, issuer, secret);
+  const encodedIssuer = encodeURIComponent(issuer);
+  const encodedEmail = encodeURIComponent(email);
+  return `otpauth://totp/${encodedIssuer}:${encodedEmail}?secret=${secret}&issuer=${encodedIssuer}&algorithm=SHA1&digits=${TOTP_DIGITS}&period=${TOTP_STEP}`;
 }
 
 /**
@@ -67,7 +74,7 @@ export async function generateQRCode(uri: string): Promise<string> {
 
 /**
  * Generate backup/recovery codes
- * Returns array of 10 unique 8-character codes
+ * Returns array of unique 8-character codes
  */
 export function generateBackupCodes(count: number = 10): string[] {
   const codes: string[] = [];
@@ -89,8 +96,8 @@ export function verifyBackupCode(
   code: string,
   backupCodes: string[]
 ): { valid: boolean; remainingCodes: string[] } {
-  const normalizedCode = code.toUpperCase().replace(/\s+/g, '');
-  const index = backupCodes.findIndex(c => c.replace(/-/g, '') === normalizedCode.replace(/-/g, ''));
+  const normalizedCode = code.toUpperCase().replace(/[\s-]/g, '');
+  const index = backupCodes.findIndex(c => c.replace(/-/g, '') === normalizedCode);
   
   if (index === -1) {
     return { valid: false, remainingCodes: backupCodes };
@@ -113,7 +120,8 @@ export function encryptData(data: string): string {
   }
   
   const iv = crypto.randomBytes(16);
-  const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(encryptionKey, 'hex').slice(0, 32), iv);
+  const key = Buffer.from(encryptionKey, 'hex').slice(0, 32);
+  const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
   let encrypted = cipher.update(data, 'utf8', 'hex');
   encrypted += cipher.final('hex');
   
@@ -131,7 +139,8 @@ export function decryptData(encryptedData: string): string {
   
   const [ivHex, encrypted] = encryptedData.split(':');
   const iv = Buffer.from(ivHex, 'hex');
-  const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(encryptionKey, 'hex').slice(0, 32), iv);
+  const key = Buffer.from(encryptionKey, 'hex').slice(0, 32);
+  const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
   let decrypted = decipher.update(encrypted, 'hex', 'utf8');
   decrypted += decipher.final('utf8');
   

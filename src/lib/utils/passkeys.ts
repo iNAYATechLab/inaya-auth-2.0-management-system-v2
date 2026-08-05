@@ -9,10 +9,6 @@ import {
   type VerifiedRegistrationResponse,
   type VerifiedAuthenticationResponse,
 } from '@simplewebauthn/server';
-import type {
-  RegistrationResponseJSON,
-  AuthenticationResponseJSON,
-} from '@simplewebauthn/browser';
 import { prisma } from '@/lib/prisma';
 
 // ─── Configuration ───────────────────────────────────────────────────────────
@@ -35,11 +31,12 @@ export async function generatePasskeyRegistrationOptions(userId: string, userEma
     rpID,
     userName: userEmail,
     attestationType: 'none',
+    userID: userEmail,
     excludeCredentials: existingPasskeys.map((pk) => ({
       id: pk.credentialId,
       type: 'public-key' as const,
       transports: [] as AuthenticatorTransport[],
-    })),
+    })) as any,
     authenticatorSelection: {
       residentKey: 'preferred',
       userVerification: 'preferred',
@@ -56,7 +53,7 @@ export async function generatePasskeyRegistrationOptions(userId: string, userEma
 // ─── Verify Registration Response ────────────────────────────────────────────
 export async function verifyPasskeyRegistration(
   userId: string,
-  response: RegistrationResponseJSON,
+  response: any,
   challenge: string
 ): Promise<{ success: boolean; credentialId?: string; error?: string }> {
   try {
@@ -71,18 +68,18 @@ export async function verifyPasskeyRegistration(
       return { success: false, error: 'Passkey verification failed' };
     }
 
-    const { credential, credentialDeviceType, credentialBackedUp } = verification.registrationInfo;
+    const { credentialID, credentialPublicKey, counter, credentialDeviceType, credentialBackedUp } = verification.registrationInfo;
 
     // Save passkey to database
     const passkey = await prisma.passkey.create({
       data: {
         userId,
-        credentialId: Buffer.from(credential.id).toString('base64url'),
-        publicKey: Buffer.from(credential.publicKey).toString('base64url'),
-        counter: credential.counter,
+        credentialId: Buffer.from(credentialID).toString('base64url'),
+        publicKey: Buffer.from(credentialPublicKey).toString('base64url'),
+        counter: BigInt(counter),
         deviceType: credentialDeviceType,
         backedUp: credentialBackedUp,
-        transports: response.response.transports || [],
+        transports: response.response?.transports || [],
       },
     });
 
@@ -101,7 +98,7 @@ export async function generatePasskeyAuthenticationOptions(credentialId?: string
 
   const options = await generateAuthenticationOptions({
     rpID,
-    allowCredentials,
+    allowCredentials: allowCredentials as any,
     userVerification: 'preferred',
   });
 
@@ -113,7 +110,7 @@ export async function generatePasskeyAuthenticationOptions(credentialId?: string
 
 // ─── Verify Authentication Response ──────────────────────────────────────────
 export async function verifyPasskeyAuthentication(
-  response: AuthenticationResponseJSON,
+  response: any,
   challenge: string
 ): Promise<{ success: boolean; userId?: string; error?: string }> {
   try {
@@ -138,9 +135,9 @@ export async function verifyPasskeyAuthentication(
       expectedChallenge: challenge,
       expectedOrigin: origin,
       expectedRPID: rpID,
-      credential: {
-        id: passkey.credentialId,
-        publicKey: Buffer.from(passkey.publicKey, 'base64url'),
+      authenticator: {
+        credentialID: Buffer.from(passkey.credentialId, 'base64url'),
+        credentialPublicKey: Buffer.from(passkey.publicKey, 'base64url'),
         counter: Number(passkey.counter),
         transports: passkey.transports as AuthenticatorTransport[],
       },

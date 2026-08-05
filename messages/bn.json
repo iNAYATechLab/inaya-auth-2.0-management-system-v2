@@ -101,6 +101,29 @@
       "activeUsers": "সক্রিয় ব্যবহারকারী",
       "newUsers": "নতুন ব্যবহারকারী",
       "auditLogs": "অডিট লগ"
+    },
+    "navigation": {
+      "dashboard": "ড্যাশবোর্ড",
+      "profile": "প্রোফাইল",
+      "security": "নিরাপত্তা সেটিংস",
+      "twoFactor": "টু-ফ্যাক্টর অথেনটিকেশন",
+      "passkeys": "পাসকী",
+      "sessions": "সেশনসমূহ",
+      "billing": "বিলিং",
+      "apiKeys": "API কী",
+      "webhooks": "ওয়েবহুক",
+      "kyc": "KYC ভেরিফিকেশন",
+      "dataManagement": "ডেটা ম্যানেজমেন্ট",
+      "settings": "সেটিংস"
+    },
+    "header": {
+      "searchPlaceholder": "অনুসন্ধান..."
+    },
+    "dropdown": {
+      "profile": "প্রোফাইল",
+      "security": "নিরাপত্তা",
+      "settings": "সেটিংস",
+      "signOut": "সাইন আউট"
     }
   },
   "users": {

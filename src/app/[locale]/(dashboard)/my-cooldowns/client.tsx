@@ -3,7 +3,8 @@
 
 import { useEffect, useState } from 'react';
 import { getMyCooldownsAction, canChangeLoginMethodAction } from '@/lib/cooldown/cooldown.actions';
-import { formatCooldownTime, getMethodName, type LoginMethodType } from '@/lib/cooldown/withCooldown';
+import { formatCooldownTime, getMethodName } from '@/lib/cooldown/withCooldown';
+import type { LoginMethodType } from '@/lib/cooldown/cooldown.util';
 import { Card } from '@/components/ui/card';
 import { Clock, Shield, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
 

@@ -72,11 +72,11 @@ export default function BillingClient({ tenantId }: BillingProps) {
     ]);
 
     if (subResult.success) {
-      setSubscription(subResult.subscription);
+      setSubscription(subResult.subscription as unknown as Subscription);
     }
 
     if (invoiceResult.success && invoiceResult.invoices) {
-      setInvoices(invoiceResult.invoices);
+      setInvoices(invoiceResult.invoices as unknown as Invoice[]);
     }
 
     if (plansResult.success && plansResult.plans) {

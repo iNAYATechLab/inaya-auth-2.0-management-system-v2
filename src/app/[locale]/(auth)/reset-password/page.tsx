@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { ResetPasswordSchema, ResetPasswordInput, validatePasswordStrength } from '@/lib/utils/validations';
 import { resetPasswordAction, verifyResetTokenAction } from '@/lib/auth/passwordResetActions';
 import { useActionState, useState, useEffect, useMemo } from 'react';
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -17,7 +18,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 // Password Strength Indicator
 function PasswordStrengthMeter({ password }: { password: string }) {
   const strength = useMemo(() => {
-    if (!password) return { score: 0, label: '', checks: {} };
     
     const checks = {
       length: password.length >= 8,
@@ -81,7 +81,7 @@ interface ResetPasswordPageProps {
   params: Promise<{ locale: string }>;
 }
 
-export default function ResetPasswordPage({ params }: ResetPasswordPageProps) {
+function ResetPasswordContent() {
   const t = useTranslations('auth.resetPassword');
   const common = useTranslations('common');
   const searchParams = useSearchParams();
@@ -247,5 +247,13 @@ export default function ResetPasswordPage({ params }: ResetPasswordPageProps) {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ResetPasswordContent />
+    </Suspense>
   );
 }

@@ -34,7 +34,7 @@ export default function AdminBackupClient() {
 
   async function loadBackups() {
     const result = await listBackupsAction();
-    if (result.success && result.backups) {
+    if (result.success && 'backups' in result && result.backups) {
       setBackups(result.backups as Backup[]);
     }
     setLoading(false);
@@ -95,12 +95,13 @@ export default function AdminBackupClient() {
     setMessage(null);
     const result = await exportSystemDataAction();
 
-    if (result.success && result.data) {
-      const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: 'application/json' });
+    if (result.success && (result as any).data) {
+      const data = (result as any).data;
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = result.filename || 'system-export.json';
+      a.download = (result as any).filename || 'system-export.json';
       a.click();
       URL.revokeObjectURL(url);
       setMessage({ type: 'success', text: 'System data exported successfully!' });

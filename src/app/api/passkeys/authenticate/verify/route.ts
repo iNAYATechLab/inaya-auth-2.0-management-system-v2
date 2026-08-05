@@ -3,8 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyPasskeyAuthentication } from '@/lib/utils/passkeys';
 import { prisma } from '@/lib/prisma';
 import { logAction } from '@/lib/utils/audit';
-import type { AuthenticationResponseJSON } from '@simplewebauthn/browser';
-import { signIn } from 'next-auth';
+// Type will be inferred from request body
+import { signIn } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const credential = body as AuthenticationResponseJSON;
+    const credential = body as any;
 
     const result = await verifyPasskeyAuthentication(credential, challenge);
 

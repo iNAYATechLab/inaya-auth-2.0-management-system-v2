@@ -88,7 +88,7 @@ export async function exportTenantData(
     }
 
     // Get audit logs if requested
-    let auditLogs = [];
+    let auditLogs: any[] = [];
     if (options.includeAuditLogs) {
       auditLogs = await prisma.auditLog.findMany({
         where: {

@@ -42,7 +42,7 @@ export default function SecurityClient({ is2FAEnabled: initial2FAStatus }: Secur
 
     if (result.error) {
       setMessage({ type: 'error', text: result.error });
-    } else if (result.success) {
+    } else if ('success' in result && result.success) {
       setSetupData({
         secret: result.secret,
         qrCode: result.qrCode,
@@ -65,13 +65,13 @@ export default function SecurityClient({ is2FAEnabled: initial2FAStatus }: Secur
 
     const result = await verifyAndEnable2FAAction(verificationToken);
 
-    if (result.error) {
+    if ('error' in result && result.error) {
       setMessage({ type: 'error', text: result.error });
-    } else if (result.success) {
+    } else if ('success' in result && result.success) {
       setIs2FAEnabled(true);
       setSetupData(null);
       setVerificationToken('');
-      setMessage({ type: 'success', text: result.message || '2FA enabled successfully!' });
+      setMessage({ type: 'success', text: (result as any).message || '2FA enabled successfully!' });
     }
 
     setLoading(false);
@@ -95,7 +95,7 @@ export default function SecurityClient({ is2FAEnabled: initial2FAStatus }: Secur
 
     if (result.error) {
       setMessage({ type: 'error', text: result.error });
-    } else if (result.success) {
+    } else if ('success' in result && result.success) {
       setIs2FAEnabled(false);
       setDisablePassword('');
       setSetupData(null);
@@ -118,7 +118,7 @@ export default function SecurityClient({ is2FAEnabled: initial2FAStatus }: Secur
 
     if (result.error) {
       setMessage({ type: 'error', text: result.error });
-    } else if (result.success && result.backupCodes) {
+    } else if ('success' in result && result.success && (result as any).backupCodes) {
       setSetupData(prev => ({
         ...prev,
         backupCodes: result.backupCodes,
