@@ -31,6 +31,7 @@ model Tenant {
   apiKeys         ApiKey[]
   subscription    Subscription? // Task 45-46: Billing
   dataRequests    DataRequest[] // Task 51: GDPR data requests
+  emailTemplates  EmailTemplate[]
   
   @@index([slug])
   @@index([domain])
@@ -896,3 +897,55 @@ enum InvoiceStatus {
 }
 
 
+
+// ─── Email Template System (Step 19) ─────────────────────────────────────────
+model EmailTemplate {
+  id                String                  @id @default(cuid())
+  tenantId          String
+  name              String                  // e.g., "welcome", "password-reset", "verification"
+  type              EmailTemplateType
+  isActive          Boolean                 @default(true)
+  activeVersionId   String?                 // Currently active version ID
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  tenant            Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  versions          EmailTemplateVersion[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@index([type])
+}
+
+model EmailTemplateVersion {
+  id          String   @id @default(cuid())
+  templateId  String
+  version     Int      // Version number (1, 2, 3, etc.)
+  subject     String
+  htmlContent String   @db.Text
+  textContent String   @db.Text // Plain text version
+  variables   Json     // Available variables for this template
+  isActive    Boolean  @default(false)
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  template    EmailTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, version])
+  @@index([templateId])
+  @@index([isActive])
+}
+
+enum EmailTemplateType {
+  WELCOME
+  VERIFICATION
+  PASSWORD_RESET
+  TWO_FACTOR
+  LOGIN_ALERT
+  SUBSCRIPTION
+  INVOICE
+  OTP
+  KYC
+  CUSTOM
+}
