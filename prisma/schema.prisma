@@ -379,8 +379,10 @@ model VerificationToken {
 // ─── Role Enum ───────────────────────────────────────────────────────────────
 enum Role {
   USER
-  ADMIN
   MODERATOR
+  ADMIN
+  ADMIN_HEAD
+  CEO
   SUPERADMIN
 }
 
