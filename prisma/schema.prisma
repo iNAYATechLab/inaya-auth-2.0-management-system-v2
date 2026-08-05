@@ -949,3 +949,50 @@ enum EmailTemplateType {
   KYC
   CUSTOM
 }
+
+// ─── Rate Limit Tracking (Step 20: Comprehensive Rate Limiting) ─────────────
+model RateLimit {
+  id          String   @id @default(cuid())
+  key         String   // Rate limit key (e.g., "ip:192.168.1.1", "user:abc123", "endpoint:/api/auth/login")
+  type        RateLimitType // Type of rate limit
+  count       Int      @default(0) // Current request count
+  windowStart DateTime // Window start time
+  windowEnd   DateTime // Window end time
+  blocked     Boolean  @default(false) // If currently blocked
+  blockedUntil DateTime? // When block expires
+  
+  @@unique([key, type])
+  @@index([key])
+  @@index([type])
+  @@index([windowEnd])
+  @@index([blocked])
+  @@map("rate_limits")
+}
+
+enum RateLimitType {
+  IP_GLOBAL      // Global IP rate limit
+  IP_AUTH        // IP rate limit for auth endpoints
+  USER_GLOBAL    // Global user rate limit
+  USER_AUTH      // User rate limit for auth endpoints
+  USER_API       // User rate limit for API endpoints
+  ENDPOINT       // Endpoint-specific rate limit
+  TENANT_API     // Tenant API rate limit
+}
+
+// ─── Rate Limit Configuration (Step 20: Configurable Rate Limits) ───────────
+model RateLimitConfig {
+  id              String   @id @default(cuid())
+  name            String   @unique // Config name (e.g., "auth_login", "api_default")
+  type            RateLimitType
+  maxRequests     Int      // Max requests per window
+  windowSeconds   Int      // Window size in seconds
+  blockDuration   Int      // Block duration in seconds (0 = no blocking)
+  description     String?  // Description of this rate limit
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([type])
+  @@index([isActive])
+  @@map("rate_limit_configs")
+}
