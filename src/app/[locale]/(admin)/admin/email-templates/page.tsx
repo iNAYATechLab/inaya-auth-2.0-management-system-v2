@@ -6,12 +6,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Mail, Check, History } from 'lucide-react';
+import { Plus, Mail, Check, History, Eye } from 'lucide-react';
+import { EmailTemplatePreview } from '@/components/email/EmailTemplatePreview';
 
 interface TemplateVersion {
   id: string;
   version: number;
   subject: string;
+  htmlContent: string;
+  textContent: string;
+  variables: Record<string, string>;
   isActive: boolean;
   createdAt: string;
 }
@@ -31,6 +35,8 @@ export default function EmailTemplatesPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showVersionForm, setShowVersionForm] = useState(false);
+  const [previewVersion, setPreviewVersion] = useState<TemplateVersion | null>(null);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
 
   useEffect(() => {
     loadTemplates();
@@ -38,7 +44,6 @@ export default function EmailTemplatesPage() {
 
   const loadTemplates = async () => {
     try {
-      // TODO: Get tenant ID from session
       const tenantId = 'demo-tenant-id';
       const response = await fetch(`/api/admin/email-templates?tenantId=${tenantId}`);
       const data = await response.json();
@@ -116,6 +121,11 @@ export default function EmailTemplatesPage() {
     } catch (error) {
       console.error('Error activating version:', error);
     }
+  };
+
+  const handlePreviewVersion = async (version: TemplateVersion) => {
+    setPreviewVersion(version);
+    setShowPreviewModal(true);
   };
 
   if (loading) {
@@ -330,14 +340,24 @@ export default function EmailTemplatesPage() {
                         </Badge>
                       )}
                     </div>
-                    {!version.isActive && (
+                    <div className="flex gap-2">
                       <Button
                         size="sm"
-                        onClick={() => handleActivateVersion(version.id)}
+                        variant="outline"
+                        onClick={() => handlePreviewVersion(version)}
                       >
-                        Activate
+                        <Eye className="w-3 h-3 mr-1" />
+                        Preview
                       </Button>
-                    )}
+                      {!version.isActive && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleActivateVersion(version.id)}
+                        >
+                          Activate
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   <div className="mt-2 text-sm text-neutral-600">
                     <strong>Subject:</strong> {version.subject}
@@ -347,6 +367,30 @@ export default function EmailTemplatesPage() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Preview Modal */}
+      {showPreviewModal && previewVersion && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-auto">
+            <div className="sticky top-0 bg-white border-b border-neutral-200 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-xl font-semibold">
+                Preview: {selectedTemplate?.name} (v{previewVersion.version})
+              </h2>
+              <Button variant="outline" onClick={() => setShowPreviewModal(false)}>
+                Close
+              </Button>
+            </div>
+            <div className="p-6">
+              <EmailTemplatePreview
+                htmlContent={previewVersion.htmlContent}
+                textContent={previewVersion.textContent}
+                subject={previewVersion.subject}
+                variables={previewVersion.variables}
+              />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
